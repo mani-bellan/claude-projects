@@ -1,0 +1,423 @@
+{
+  "tables": {
+    "mf_features": {
+      "columns": {
+        "annualized_return": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "cagr_10y": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "cagr_1y": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "cagr_3y": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "cagr_5y": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "computed_at": {
+          "nullable": true,
+          "type": "TIMESTAMP"
+        },
+        "first_date": {
+          "nullable": true,
+          "type": "DATE"
+        },
+        "fund_house": {
+          "nullable": true,
+          "type": "VARCHAR"
+        },
+        "last_date": {
+          "nullable": true,
+          "type": "DATE"
+        },
+        "latest_price": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "max_drawdown": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "observations": {
+          "nullable": true,
+          "type": "UBIGINT"
+        },
+        "scheme_category": {
+          "nullable": true,
+          "type": "VARCHAR"
+        },
+        "scheme_code": {
+          "nullable": true,
+          "type": "BIGINT"
+        },
+        "scheme_name": {
+          "nullable": true,
+          "type": "VARCHAR"
+        },
+        "sharpe": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "volatility": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "years_history": {
+          "nullable": true,
+          "type": "DOUBLE"
+        }
+      },
+      "created_at": "2026-04-26T15:53:23+00:00",
+      "primary_key": [
+        "scheme_code"
+      ],
+      "schema_version": 1,
+      "updated_at": "2026-04-26T15:53:23+00:00"
+    },
+    "mf_navs": {
+      "columns": {
+        "date": {
+          "nullable": true,
+          "type": "DATE"
+        },
+        "fund_house": {
+          "nullable": true,
+          "type": "VARCHAR"
+        },
+        "nav": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "scheme_category": {
+          "nullable": true,
+          "type": "VARCHAR"
+        },
+        "scheme_code": {
+          "nullable": true,
+          "type": "BIGINT"
+        },
+        "scheme_name": {
+          "nullable": true,
+          "type": "VARCHAR"
+        },
+        "scheme_type": {
+          "nullable": true,
+          "type": "VARCHAR"
+        }
+      },
+      "created_at": "2026-04-26T14:39:16+00:00",
+      "primary_key": [
+        "scheme_code",
+        "date"
+      ],
+      "schema_version": 1,
+      "updated_at": "2026-04-26T14:39:16+00:00"
+    },
+    "mf_recommendations": {
+      "columns": {
+        "computed_at": {
+          "nullable": true,
+          "type": "TIMESTAMP"
+        },
+        "fund_house": {
+          "nullable": true,
+          "type": "VARCHAR"
+        },
+        "is_elss": {
+          "nullable": true,
+          "type": "BOOLEAN"
+        },
+        "max_drawdown": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "pillar_drawdown": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "pillar_longevity": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "pillar_returns": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "pillar_stability": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "primary_cagr": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "rank": {
+          "nullable": true,
+          "type": "INTEGER"
+        },
+        "rationale": {
+          "nullable": true,
+          "type": "VARCHAR"
+        },
+        "risk_tier": {
+          "nullable": true,
+          "type": "VARCHAR"
+        },
+        "scheme_category": {
+          "nullable": true,
+          "type": "VARCHAR"
+        },
+        "scheme_code": {
+          "nullable": true,
+          "type": "BIGINT"
+        },
+        "scheme_name": {
+          "nullable": true,
+          "type": "VARCHAR"
+        },
+        "score": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "volatility": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "years_history": {
+          "nullable": true,
+          "type": "DOUBLE"
+        }
+      },
+      "created_at": "2026-04-26T15:53:24+00:00",
+      "primary_key": [
+        "scheme_code"
+      ],
+      "schema_version": 1,
+      "updated_at": "2026-04-26T15:53:24+00:00"
+    },
+    "mf_scheme_master": {
+      "columns": {
+        "scheme_code": {
+          "nullable": true,
+          "type": "BIGINT"
+        },
+        "scheme_name": {
+          "nullable": true,
+          "type": "VARCHAR"
+        }
+      },
+      "created_at": "2026-04-26T14:32:22+00:00",
+      "primary_key": [
+        "scheme_code"
+      ],
+      "schema_version": 1,
+      "updated_at": "2026-04-26T14:32:22+00:00"
+    },
+    "stock_features": {
+      "columns": {
+        "annualized_return": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "cagr_10y": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "cagr_1y": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "cagr_3y": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "cagr_5y": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "computed_at": {
+          "nullable": true,
+          "type": "TIMESTAMP"
+        },
+        "first_date": {
+          "nullable": true,
+          "type": "DATE"
+        },
+        "last_date": {
+          "nullable": true,
+          "type": "DATE"
+        },
+        "latest_price": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "max_drawdown": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "observations": {
+          "nullable": true,
+          "type": "UBIGINT"
+        },
+        "sharpe": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "ticker": {
+          "nullable": true,
+          "type": "VARCHAR"
+        },
+        "volatility": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "years_history": {
+          "nullable": true,
+          "type": "DOUBLE"
+        }
+      },
+      "created_at": "2026-04-26T15:52:58+00:00",
+      "primary_key": [
+        "ticker"
+      ],
+      "schema_version": 1,
+      "updated_at": "2026-04-26T15:52:58+00:00"
+    },
+    "stock_prices": {
+      "columns": {
+        "adj_close": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "close": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "date": {
+          "nullable": true,
+          "type": "DATE"
+        },
+        "high": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "low": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "open": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "ticker": {
+          "nullable": true,
+          "type": "VARCHAR"
+        },
+        "volume": {
+          "nullable": true,
+          "type": "BIGINT"
+        }
+      },
+      "created_at": "2026-04-26T14:33:39+00:00",
+      "primary_key": [
+        "ticker",
+        "date"
+      ],
+      "schema_version": 1,
+      "updated_at": "2026-04-26T14:33:39+00:00"
+    },
+    "stock_recommendations": {
+      "columns": {
+        "computed_at": {
+          "nullable": true,
+          "type": "TIMESTAMP"
+        },
+        "max_drawdown": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "pillar_drawdown": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "pillar_longevity": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "pillar_returns": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "pillar_stability": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "primary_cagr": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "rank": {
+          "nullable": true,
+          "type": "INTEGER"
+        },
+        "rationale": {
+          "nullable": true,
+          "type": "VARCHAR"
+        },
+        "risk_tier": {
+          "nullable": true,
+          "type": "VARCHAR"
+        },
+        "score": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "ticker": {
+          "nullable": true,
+          "type": "VARCHAR"
+        },
+        "volatility": {
+          "nullable": true,
+          "type": "DOUBLE"
+        },
+        "years_history": {
+          "nullable": true,
+          "type": "DOUBLE"
+        }
+      },
+      "created_at": "2026-04-26T15:53:22+00:00",
+      "primary_key": [
+        "ticker"
+      ],
+      "schema_version": 1,
+      "updated_at": "2026-04-26T15:53:22+00:00"
+    },
+    "stock_universe": {
+      "columns": {
+        "ticker": {
+          "nullable": true,
+          "type": "VARCHAR"
+        },
+        "universe": {
+          "nullable": true,
+          "type": "VARCHAR"
+        }
+      },
+      "created_at": "2026-04-26T14:31:55+00:00",
+      "primary_key": [
+        "ticker"
+      ],
+      "schema_version": 1,
+      "updated_at": "2026-04-26T14:31:55+00:00"
+    }
+  },
+  "version": 1
+}

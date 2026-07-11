@@ -1,0 +1,90 @@
+[
+  {
+    "name": "Third Wave Coffee Indiranagar",
+    "category": "cafe",
+    "address": "100 Feet Rd, Indiranagar, Bengaluru",
+    "city": "Bangalore",
+    "lat": 12.9719,
+    "lng": 77.6412,
+    "rating": 4.3,
+    "rating_count": 2100,
+    "allows_dogs": true,
+    "reviews": [
+      {"text": "Took my golden retriever here on a Sunday — staff brought a water bowl without us even asking. Outdoor seating only for pets but plenty of shade.", "date": "2026-04-12"},
+      {"text": "Great cold brew. Saw a couple of dogs at the patio tables, seems like a regular thing here.", "date": "2026-02-03"}
+    ]
+  },
+  {
+    "name": "Dyu Art Cafe Koramangala",
+    "category": "cafe",
+    "address": "KHB Colony, Koramangala, Bengaluru",
+    "city": "Bangalore",
+    "lat": 12.9352,
+    "lng": 77.6245,
+    "rating": 4.4,
+    "rating_count": 5400,
+    "allows_dogs": true,
+    "reviews": [
+      {"text": "Lovely courtyard, very pet friendly. My beagle and indie both welcomed. They have a small menu for dogs too!", "date": "2026-05-20"},
+      {"text": "Calm place to work from. Lots of pets around on weekends which I loved.", "date": "2026-01-15"}
+    ]
+  },
+  {
+    "name": "The Hole in the Wall Cafe",
+    "category": "cafe",
+    "address": "Koramangala 4th Block, Bengaluru",
+    "city": "Bangalore",
+    "lat": 12.9304,
+    "lng": 77.6271,
+    "rating": 4.2,
+    "rating_count": 3800,
+    "allows_dogs": false,
+    "reviews": [
+      {"text": "We were turned away because we had our small pomeranian with us. Disappointing, the listing online said pet friendly.", "date": "2026-03-30"},
+      {"text": "Best english breakfast in town. Long wait on weekends.", "date": "2026-04-02"}
+    ]
+  },
+  {
+    "name": "Machaan Plantation Resort, Sakleshpur",
+    "category": "resort",
+    "address": "Sakleshpur, Karnataka",
+    "city": "Sakleshpur",
+    "lat": 12.8941,
+    "lng": 75.7252,
+    "rating": 4.5,
+    "rating_count": 640,
+    "allows_dogs": true,
+    "reviews": [
+      {"text": "One of the few resorts that genuinely welcomes large dogs. Our labrador had the time of his life. Pet fee of Rs 1000 per night, fenced lawn.", "date": "2026-05-01"},
+      {"text": "Pet friendly stay, they allowed our two cats in the cottage. Carrier required in common areas.", "date": "2025-12-18"}
+    ]
+  },
+  {
+    "name": "Cafe Azzure MG Road",
+    "category": "cafe",
+    "address": "MG Road, Bengaluru",
+    "city": "Bangalore",
+    "lat": 12.9758,
+    "lng": 77.6045,
+    "rating": 4.0,
+    "rating_count": 1500,
+    "allows_dogs": null,
+    "reviews": [
+      {"text": "Rooftop view is great, food average.", "date": "2026-02-22"}
+    ]
+  },
+  {
+    "name": "Whistling Woodzs Resort, Coorg",
+    "category": "resort",
+    "address": "Madikeri, Coorg, Karnataka",
+    "city": "Coorg",
+    "lat": 12.4244,
+    "lng": 75.7382,
+    "rating": 4.1,
+    "rating_count": 980,
+    "allows_dogs": true,
+    "reviews": [
+      {"text": "Stayed with our indie dog — no extra charge, but pets not allowed in the restaurant area. Rooms open onto the lawn which is perfect.", "date": "2026-04-25"}
+    ]
+  }
+]

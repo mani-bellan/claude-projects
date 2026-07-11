@@ -1,0 +1,77 @@
+# Data quality rules.
+#
+# row_rules run per-record during silver promotion; any failure quarantines
+# the row. Nullable optional columns must set allow_null so column-removal
+# drift (field -> NULL) degrades gracefully instead of quarantining a batch.
+#
+# batch_rules run after promotion; they alert, never quarantine.
+
+row_rules:
+  - name: order_id_not_null
+    severity: critical
+    check: not_null
+    column: order_id
+
+  - name: order_ts_not_null
+    severity: critical
+    check: not_null
+    column: order_ts
+
+  - name: status_in_allowed_set
+    severity: critical
+    check: in_set
+    column: status
+    values: [placed, confirmed, shipped, delivered, cancelled, refunded]
+
+  - name: currency_iso_valid
+    severity: warning
+    check: in_set
+    column: currency
+    values: [INR, USD, EUR, GBP, SGD]
+    allow_null: true
+
+  - name: amount_within_bounds
+    severity: warning
+    check: range
+    column: total_amount
+    min: -1000000
+    max: 1000000
+    allow_null: true
+
+  - name: order_ts_not_future
+    severity: critical
+    check: ts_not_future
+    column: order_ts
+    tolerance_minutes: 5
+
+  - name: order_ts_not_stale
+    severity: warning
+    check: ts_not_older_days
+    column: order_ts
+    days: 30
+
+  - name: negative_amount_only_refunds
+    severity: critical
+    check: negative_only_for_status
+    column: total_amount
+    status_column: status
+    allowed_status: refunded
+
+  - name: items_present_for_active_orders
+    severity: warning
+    check: items_nonempty_unless_status
+    column: items
+    exempt_statuses: [cancelled]
+
+batch_rules:
+  - name: volume_anomaly
+    severity: warning
+    type: volume_band
+    lookback_batches: 10
+    min_history: 3
+    band_factor: 3.0   # batch must be within [avg/3, avg*3] of trailing average
+
+  - name: freshness
+    severity: warning
+    type: freshness
+    max_lag_minutes: 60

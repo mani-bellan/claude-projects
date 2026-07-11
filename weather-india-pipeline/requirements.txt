@@ -1,0 +1,8 @@
+# Extractor + ETL
+requests>=2.31
+duckdb>=0.10
+pyarrow>=14.0
+
+# Airflow (install separately with a constraints file, see README).
+# Pinning the major line you intend to run:
+# apache-airflow==2.9.*

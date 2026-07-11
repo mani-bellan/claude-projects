@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+warehouse/orders.duckdb
+warehouse/orders.duckdb.wal
+warehouse/landing/
+warehouse/generator_state.json
+.pytest_cache/

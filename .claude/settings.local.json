@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(claude-api)",
+      "Skill(claude-api:*)",
+      "Bash(python -c ' *)",
+      "Bash(./.venv/bin/python -c \"import ast; ast.parse\\(open\\('app.py'\\).read\\(\\)\\); import app; print\\('app imports OK'\\)\")"
+    ]
+  }
+}

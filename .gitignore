@@ -1,0 +1,52 @@
+# --- Secrets: never commit. Only .env.example templates are tracked. ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+service-account*.json
+# Plaintext key scratch notes at repo root
+grokAPI
+
+# --- Python ---
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# --- Node / Next.js ---
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+.vercel/
+
+# --- Data & warehouses (regenerate from pipelines, not source of truth) ---
+*.duckdb
+*.duckdb.wal
+*.db
+*.sqlite
+*.sqlite3
+*.parquet
+
+# --- Airflow ---
+airflow.db
+airflow.cfg
+airflow-webserver.pid
+logs/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

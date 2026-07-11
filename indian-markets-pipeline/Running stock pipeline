@@ -1,0 +1,57 @@
+⏺ Three DAGs in order. They're already scheduled, but to refresh on demand trigger them manually:
+
+  ┌───────────────┬─────────────────────────────────────────────────────────────────────────────────────┬────────────────────────────────┐
+  │      DAG      │                                    What it does                                     │            Schedule            │
+  ├───────────────┼─────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────┤
+  │ daily_prices  │ Pulls last ~7 days of OHLCV from yfinance for the full Nifty 500, idempotent upsert │ 0 13 * * 1-5 (after NSE close) │
+  ├───────────────┼─────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────┤
+  │ daily_navs    │ Pulls latest NAVs from mfapi.in for the 30 curated schemes                          │ 30 14 * * *                    │
+  ├───────────────┼─────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────┤
+  │ feature_build │ Recomputes *_features + *_recommendations from refreshed prices/NAVs                │ 0 16 * * *                     │
+  └───────────────┴─────────────────────────────────────────────────────────────────────────────────────┴────────────────────────────────┘
+
+  To trigger now from the UI: http://localhost:8080 → DAGs → click each → ▶ "Trigger DAG". Run daily_prices and daily_navs first (they're independent, can run in parallel), then feature_build once both
+  finish.
+
+  Or from the CLI:
+  docker compose exec airflow-scheduler airflow dags trigger daily_prices
+  docker compose exec airflow-scheduler airflow dags trigger daily_navs
+  # wait until both succeed
+  docker compose exec airflow-scheduler airflow dags trigger feature_build
+
+
+My kid is looking to get into Law universities in a couple of years. I am someone who does not know anything about Law and law universities in India and abroad. 
+
+You are an expert Law school consultant who knows everything about Law schools in India and abroad and details of admission procedures, cut offs, fees, ranking etc. You also are an expert who knows details of career options in Law in India and abroad. 
+
+Go ahead and build a Website which will help any parent who is looking for information to help them with the following 
+
+1. Law schools in India 
+2. Ranking of law schools in India and add few real reviews from parents/students for these top colleges
+3. Admission procedure to these law schools in India
+4. Cut off/CLAT Ranks for these Law schools in  the past 5 years
+5. Different courses available for Law in India
+6. Specialization Niches/Higher studies in Law
+7. Career options for anyone completing Law degree in India
+
+
+Do a similar information building of top 10 law universities abroad.
+
+Make sure you have real information and not something that is generated as this is information that needs to be shared with like minded parents and students.
+
+Make the website intuitive and as user friendly as possible 
+
+ One ongoing thing to know
+
+  The data on the site is frozen at the moment of your last deploy. If you want to update fees, cutoffs, etc., you'll need to:
+  1. Edit the relevant file in src/lib/data/
+  2. Run vercel --prod from the project folder
+
+
+Next time you want to edit and preview locally:
+  cd /Users/manikandanbellan/Documents/Learn/Claude/law-school-guide
+  npm run dev          # to test locally
+  vercel --prod        # to redeploy after edits
+
+Resume this session with:
+claude --resume 77ecea92-79be-4c8d-900d-d145687f6547 for continuing this session for law school guide

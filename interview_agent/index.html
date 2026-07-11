@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DE Interview Agent Swarm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0b0e14;
+    --bg2: #111520;
+    --bg3: #181d2a;
+    --border: rgba(255,255,255,0.07);
+    --border-bright: rgba(255,255,255,0.14);
+    --accent: #00e5a0;
+    --accent2: #0ea5e9;
+    --accent3: #f59e0b;
+    --accent4: #e879f9;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --muted2: #9ca3af;
+    --danger: #f87171;
+    --reader-c: #0ea5e9;
+    --solver-c: #a78bfa;
+    --validator-c: #34d399;
+    --optimizer-c: #f59e0b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  /* Header */
+  .header { margin-bottom: 2.5rem; }
+  .header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-icon { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .logo-text h1 { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+  .logo-text p { font-size: 11px; color: var(--muted); margin-top: 2px; letter-spacing: 0.5px; }
+  .api-key-btn { font-family: 'DM Mono', monospace; font-size: 11px; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border-bright); background: var(--bg2); color: var(--muted2); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .api-key-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .api-key-btn.set { border-color: rgba(0,229,160,0.3); color: var(--accent); background: rgba(0,229,160,0.05); }
+
+  /* Pipeline strip */
+  .pipeline { display: flex; align-items: center; gap: 0; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 2rem; }
+  .pipe-step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px; font-size: 10px; color: var(--muted); border-right: 1px solid var(--border); transition: all 0.3s; position: relative; text-align: center; }
+  .pipe-step:last-child { border-right: none; }
+  .pipe-step .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-bright); transition: all 0.3s; }
+  .pipe-step.active .dot { background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse 1s infinite; }
+  .pipe-step.done .dot { background: var(--accent); }
+  .pipe-step.active { color: var(--accent); background: rgba(0,229,160,0.04); }
+  .pipe-step.done { color: var(--muted2); }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+  /* Layout */
+  .layout { display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; align-items: start; }
+  @media (max-width: 700px) { .layout { grid-template-columns: 1fr; } }
+
+  /* Sidebar */
+  .sidebar { display: flex; flex-direction: column; gap: 1rem; }
+
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .card-head { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 10px; letter-spacing: 1px; color: var(--muted); font-family: 'Syne', sans-serif; font-weight: 600; text-transform: uppercase; }
+
+  /* Category selector */
+  .categories { padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .cat-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; color: var(--muted2); transition: all 0.2s; border: 1px solid transparent; }
+  .cat-item:hover { background: var(--bg3); color: var(--text); }
+  .cat-item.active { background: var(--bg3); border-color: var(--border-bright); color: var(--text); }
+  .cat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .cat-badge { margin-left: auto; font-size: 9px; padding: 2px 6px; border-radius: 4px; background: var(--bg); color: var(--muted); }
+
+  /* Examples */
+  .examples-list { padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .ex-item { padding: 8px 10px; border-radius: 7px; font-size: 11px; line-height: 1.5; color: var(--muted2); cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+  .ex-item:hover { background: var(--bg3); border-color: var(--border); color: var(--text); }
+
+  /* History */
+  .history-list { padding: 10px; display: flex; flex-direction: column; gap: 4px; max-height: 200px; overflow-y: auto; }
+  .history-item { padding: 8px 10px; border-radius: 7px; font-size: 11px; color: var(--muted); cursor: pointer; transition: all 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .history-item:hover { background: var(--bg3); color: var(--text); }
+  .history-empty { font-size: 11px; color: var(--muted); padding: 8px 10px; }
+
+  /* Main panel */
+  .main-panel { display: flex; flex-direction: column; gap: 1rem; }
+
+  /* Question input */
+  .question-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .q-label { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 10px; letter-spacing: 1px; color: var(--muted); font-family: 'Syne', sans-serif; font-weight: 600; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+  .q-label .cat-tag { font-size: 9px; padding: 2px 8px; border-radius: 4px; font-family: 'DM Mono', monospace; letter-spacing: 0; text-transform: lowercase; }
+  textarea#question {
+    width: 100%; min-height: 120px; border: none; outline: none;
+    background: transparent; color: var(--text); font-family: 'DM Mono', monospace;
+    font-size: 13px; line-height: 1.7; padding: 14px 16px; resize: vertical;
+  }
+  textarea#question::placeholder { color: var(--muted); }
+  .q-footer { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-top: 1px solid var(--border); gap: 10px; }
+  .char-count { font-size: 10px; color: var(--muted); }
+  .run-btn {
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px;
+    letter-spacing: 0.5px; padding: 10px 24px; border-radius: 8px; border: none;
+    background: var(--accent); color: #000; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .run-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,229,160,0.3); }
+  .run-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+  .run-btn .spinner { width: 14px; height: 14px; border: 2px solid rgba(0,0,0,0.3); border-top-color: #000; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Agent cards */
+  .agents-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 700px) { .agents-row { grid-template-columns: 1fr; } }
+
+  .agent-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+    overflow: hidden; transition: border-color 0.3s;
+  }
+  .agent-card.active { border-color: rgba(0,229,160,0.3); }
+  .agent-card.done { border-color: rgba(0,229,160,0.2); }
+  .agent-header { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .agent-avatar { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .agent-info { flex: 1; min-width: 0; }
+  .agent-name { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; }
+  .agent-status { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .agent-indicator { width: 8px; height: 8px; border-radius: 50%; background: var(--border-bright); flex-shrink: 0; transition: all 0.3s; }
+  .agent-card.active .agent-indicator { background: var(--accent); animation: pulse 1s infinite; }
+  .agent-card.done .agent-indicator { background: var(--accent); }
+  .agent-body { padding: 10px 12px; font-size: 11px; line-height: 1.6; color: var(--muted2); max-height: 100px; overflow: hidden; display: none; }
+  .agent-body.show { display: block; }
+
+  /* Results */
+  .results-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: none; }
+  .results-card.show { display: block; }
+
+  .tabs { display: flex; border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .tab { flex-shrink: 0; padding: 12px 18px; font-size: 11px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: 'Syne', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tab-panel { display: none; padding: 1.25rem; }
+  .tab-panel.active { display: block; }
+
+  .complexity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+  @media (max-width: 500px) { .complexity-grid { grid-template-columns: 1fr; } }
+  .complexity-box { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .complexity-label { font-size: 10px; letter-spacing: 1px; color: var(--muted); font-family: 'Syne', sans-serif; font-weight: 600; text-transform: uppercase; margin-bottom: 6px; }
+  .complexity-value { font-size: 13px; color: var(--text); line-height: 1.5; }
+
+  .prose { font-size: 12px; line-height: 1.8; color: var(--muted2); white-space: pre-wrap; }
+  pre.code-block {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; font-size: 12px; font-family: 'DM Mono', monospace;
+    line-height: 1.7; color: #c9d1e3; overflow-x: auto; white-space: pre;
+    margin: 10px 0;
+  }
+
+  .tips-box { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.2); border-radius: 8px; padding: 14px 16px; margin-top: 12px; }
+  .tips-label { font-size: 10px; letter-spacing: 1px; color: var(--accent3); font-family: 'Syne', sans-serif; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
+  .tips-content { font-size: 12px; line-height: 1.7; color: var(--muted2); white-space: pre-wrap; }
+
+  .save-btn { font-family: 'DM Mono', monospace; font-size: 11px; padding: 8px 16px; border-radius: 7px; border: 1px solid var(--border-bright); background: transparent; color: var(--muted2); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+  .save-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .results-footer { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid var(--border); }
+  .elapsed { font-size: 10px; color: var(--muted); }
+
+  /* Error */
+  .error-banner { display: none; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-radius: 8px; padding: 12px 16px; font-size: 12px; color: var(--danger); margin-bottom: 1rem; }
+  .error-banner.show { display: block; }
+
+  /* API Key modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 1rem; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--bg2); border: 1px solid var(--border-bright); border-radius: 16px; padding: 2rem; max-width: 440px; width: 100%; }
+  .modal h2 { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+  .modal p { font-size: 12px; color: var(--muted2); line-height: 1.6; margin-bottom: 1.25rem; }
+  .modal input { width: 100%; background: var(--bg3); border: 1px solid var(--border-bright); border-radius: 8px; padding: 10px 14px; font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text); outline: none; transition: border-color 0.2s; margin-bottom: 12px; }
+  .modal input:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 8px; }
+  .modal-save { flex: 1; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; padding: 10px; border-radius: 8px; border: none; background: var(--accent); color: #000; cursor: pointer; transition: all 0.2s; }
+  .modal-save:hover { opacity: 0.85; }
+  .modal-cancel { font-family: 'DM Mono', monospace; font-size: 12px; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border-bright); background: transparent; color: var(--muted2); cursor: pointer; }
+  .modal-link { color: var(--accent); text-decoration: none; }
+  .modal-link:hover { text-decoration: underline; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+  /* Animations */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .fadeIn { animation: fadeIn 0.3s ease forwards; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">
+        <div class="logo-icon">🧠</div>
+        <div class="logo-text">
+          <h1>DE Interview Swarm</h1>
+          <p>4-AGENT PIPELINE · GROQ + LLAMA 3.3 70B</p>
+        </div>
+      </div>
+      <button class="api-key-btn" id="apiKeyBtn" onclick="openModal()">⚙ Set API Key</button>
+    </div>
+
+    <!-- Pipeline strip -->
+    <div class="pipeline">
+      <div class="pipe-step" id="ps-reader">
+        <div class="dot"></div>
+        <span>Reader</span>
+      </div>
+      <div class="pipe-step" id="ps-solver">
+        <div class="dot"></div>
+        <span>Solver</span>
+      </div>
+      <div class="pipe-step" id="ps-validator">
+        <div class="dot"></div>
+        <span>Validator</span>
+      </div>
+      <div class="pipe-step" id="ps-optimizer">
+        <div class="dot"></div>
+        <span>Optimizer</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error banner -->
+  <div class="error-banner" id="errorBanner"></div>
+
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+
+      <!-- Categories -->
+      <div class="card">
+        <div class="card-head">Category</div>
+        <div class="categories" id="categories">
+          <div class="cat-item active" data-cat="coding" onclick="selectCat(this)">
+            <div class="cat-dot" style="background:#a78bfa"></div>
+            <span>Coding</span>
+            <span class="cat-badge">Python</span>
+          </div>
+          <div class="cat-item" data-cat="architecture" onclick="selectCat(this)">
+            <div class="cat-dot" style="background:#0ea5e9"></div>
+            <span>Architecture</span>
+            <span class="cat-badge">System</span>
+          </div>
+          <div class="cat-item" data-cat="design" onclick="selectCat(this)">
+            <div class="cat-dot" style="background:#34d399"></div>
+            <span>System Design</span>
+            <span class="cat-badge">Schema</span>
+          </div>
+          <div class="cat-item" data-cat="sql" onclick="selectCat(this)">
+            <div class="cat-dot" style="background:#f59e0b"></div>
+            <span>SQL / Query</span>
+            <span class="cat-badge">SQL</span>
+          </div>
+          <div class="cat-item" data-cat="streaming" onclick="selectCat(this)">
+            <div class="cat-dot" style="background:#e879f9"></div>
+            <span>Streaming</span>
+            <span class="cat-badge">Kafka</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Examples -->
+      <div class="card">
+        <div class="card-head">Examples</div>
+        <div class="examples-list" id="examplesList"></div>
+      </div>
+
+      <!-- History -->
+      <div class="card">
+        <div class="card-head">History</div>
+        <div class="history-list" id="historyList">
+          <div class="history-empty">No questions yet</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Main panel -->
+    <div class="main-panel">
+
+      <!-- Question input -->
+      <div class="question-card">
+        <div class="q-label">
+          Question
+          <span class="cat-tag" id="catTag" style="background:rgba(167,139,250,0.15); color:#a78bfa;">coding</span>
+        </div>
+        <textarea id="question" placeholder="Paste your data engineering interview question here..." oninput="updateCharCount()"></textarea>
+        <div class="q-footer">
+          <span class="char-count" id="charCount">0 chars</span>
+          <button class="run-btn" id="runBtn" onclick="runSwarm()">
+            <span>▶ Run Swarm</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Agent cards -->
+      <div class="agents-row">
+        <div class="agent-card" id="ac-reader">
+          <div class="agent-header">
+            <div class="agent-avatar" style="background:rgba(14,165,233,0.15);">📄</div>
+            <div class="agent-info">
+              <div class="agent-name" style="color:var(--reader-c)">Question Reader</div>
+              <div class="agent-status" id="st-reader">Idle</div>
+            </div>
+            <div class="agent-indicator"></div>
+          </div>
+          <div class="agent-body" id="out-reader"></div>
+        </div>
+        <div class="agent-card" id="ac-solver">
+          <div class="agent-header">
+            <div class="agent-avatar" style="background:rgba(167,139,250,0.15);">🧠</div>
+            <div class="agent-info">
+              <div class="agent-name" style="color:var(--solver-c)">Solution Producer</div>
+              <div class="agent-status" id="st-solver">Idle</div>
+            </div>
+            <div class="agent-indicator"></div>
+          </div>
+          <div class="agent-body" id="out-solver"></div>
+        </div>
+        <div class="agent-card" id="ac-validator">
+          <div class="agent-header">
+            <div class="agent-avatar" style="background:rgba(52,211,153,0.15);">🛡</div>
+            <div class="agent-info">
+              <div class="agent-name" style="color:var(--validator-c)">Validator</div>
+              <div class="agent-status" id="st-validator">Idle</div>
+            </div>
+            <div class="agent-indicator"></div>
+          </div>
+          <div class="agent-body" id="out-validator"></div>
+        </div>
+        <div class="agent-card" id="ac-optimizer">
+          <div class="agent-header">
+            <div class="agent-avatar" style="background:rgba(245,158,11,0.15);">🚀</div>
+            <div class="agent-info">
+              <div class="agent-name" style="color:var(--optimizer-c)">Optimizer</div>
+              <div class="agent-status" id="st-optimizer">Idle</div>
+            </div>
+            <div class="agent-indicator"></div>
+          </div>
+          <div class="agent-body" id="out-optimizer"></div>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="results-card" id="resultsCard">
+        <div class="tabs">
+          <div class="tab active" onclick="showTab('solution', this)">Final Solution</div>
+          <div class="tab" onclick="showTab('validation', this)">Validation</div>
+          <div class="tab" onclick="showTab('complexity', this)">Complexity</div>
+          <div class="tab" onclick="showTab('analysis', this)">Question Analysis</div>
+        </div>
+
+        <div class="tab-panel active" id="tp-solution"></div>
+        <div class="tab-panel" id="tp-validation"></div>
+        <div class="tab-panel" id="tp-complexity"></div>
+        <div class="tab-panel" id="tp-analysis"></div>
+
+        <div class="results-footer">
+          <span class="elapsed" id="elapsed"></span>
+          <button class="save-btn" onclick="saveMarkdown()">⬇ Save as Markdown</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- API Key Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>Groq API Key</h2>
+    <p>
+      Get your free API key at <a href="https://console.groq.com" target="_blank" class="modal-link">console.groq.com</a>.
+      It's stored only in your browser's local storage and never sent anywhere except Groq's API.
+    </p>
+    <input type="password" id="apiKeyInput" placeholder="gsk_..." />
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-save" onclick="saveApiKey()">Save Key</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Constants ─────────────────────────────────────────────────────────────────
+const MODEL = 'llama-3.3-70b-versatile';
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
+const EXAMPLES = {
+  coding: [
+    'Write a Python function to find the top-K most frequent elements in a stream of data efficiently.',
+    'Implement a sliding window to compute the average of the last N records in O(1) time.',
+    'Write a function to deduplicate records in a large dataset using hashing.'
+  ],
+  architecture: [
+    'Design a real-time data pipeline to ingest 1M events/second from IoT devices.',
+    'How would you architect a Lambda architecture for batch + streaming analytics?',
+    'Design a fault-tolerant ETL system that handles schema changes gracefully.'
+  ],
+  design: [
+    'Design a data warehouse schema for an e-commerce platform.',
+    'How would you design a slowly changing dimension (SCD Type 2) for a customer table?',
+    'Design a system to handle late-arriving data in a streaming pipeline.'
+  ],
+  sql: [
+    'Write a SQL query to find the second highest salary per department.',
+    'How would you compute a 7-day rolling average of daily sales in SQL?',
+    'Write a query to detect gaps in a time series sensor dataset.'
+  ],
+  streaming: [
+    'How does Apache Kafka handle message ordering and consumer group rebalancing?',
+    'Compare Flink vs Spark Streaming for exactly-once semantics.',
+    'How would you implement deduplication in a Kafka Streams application?'
+  ]
+};
+
+const CAT_COLORS = {
+  coding: { bg: 'rgba(167,139,250,0.15)', color: '#a78bfa' },
+  architecture: { bg: 'rgba(14,165,233,0.15)', color: '#0ea5e9' },
+  design: { bg: 'rgba(52,211,153,0.15)', color: '#34d399' },
+  sql: { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b' },
+  streaming: { bg: 'rgba(232,121,249,0.15)', color: '#e879f9' }
+};
+
+const PROMPTS = {
+  reader: `You are a data engineering interview question analyst.
+Given a question, extract:
+1. CATEGORY: (coding/architecture/design/sql/streaming)
+2. DIFFICULTY: (easy/medium/hard)
+3. KEY CONCEPTS: list the main DE concepts being tested
+4. CONSTRAINTS: any explicit constraints mentioned
+5. EXPECTED OUTPUT: what a complete answer should include
+Be concise and structured.`,
+
+  solver: `You are an expert data engineer solving interview questions.
+Produce a thorough solution:
+- For CODING: write complete, working Python code with explanation
+- For ARCHITECTURE/DESIGN: describe the system with components, data flow, trade-offs
+- For SQL: write the full query with explanation
+- For STREAMING: explain concepts and provide code or pseudocode
+Always include:
+1. APPROACH: high-level strategy
+2. SOLUTION: full code or detailed design
+3. INITIAL COMPLEXITY: time and space estimate
+4. EDGE CASES: list edge cases considered`,
+
+  validator: `You are a senior data engineer and code reviewer.
+Critically validate the proposed solution. Check for:
+1. CORRECTNESS: Does it solve the problem? Any logical errors?
+2. TIME COMPLEXITY: Is the stated complexity correct? Can it be improved?
+3. SPACE COMPLEXITY: Is memory usage optimal? Any hidden space costs?
+4. EDGE CASES: What edge cases are NOT handled?
+5. SCALABILITY: Will it work at scale?
+6. CODE QUALITY: Python anti-patterns, inefficiencies, missing error handling?
+7. ISSUES FOUND: List specific problems with severity (critical/major/minor)`,
+
+  optimizer: `You are a principal data engineer and algorithm optimization expert.
+Based on the validation report, produce a FINAL OPTIMIZED SOLUTION.
+
+Your response MUST include these exact sections:
+
+## FINAL SOLUTION
+[Complete, production-ready code or design — fix ALL issues from validation]
+
+## TIME COMPLEXITY
+[Big-O analysis with best/average/worst case explanation]
+
+## SPACE COMPLEXITY
+[Big-O memory analysis with explanation]
+
+## OPTIMIZATIONS MADE
+[Bullet list of each specific improvement over the original]
+
+## INTERVIEW TIPS
+[2-3 key points to mention to impress the interviewer]
+
+Do not skip any section.`
+};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let selectedCat = 'coding';
+let history = JSON.parse(localStorage.getItem('de_history') || '[]');
+let lastResults = null;
+let lastQuestion = '';
+let startTime = 0;
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+window.onload = () => {
+  renderExamples();
+  renderHistory();
+  checkApiKey();
+};
+
+function checkApiKey() {
+  const key = localStorage.getItem('groq_api_key');
+  const btn = document.getElementById('apiKeyBtn');
+  if (key) {
+    btn.textContent = '✓ API Key Set';
+    btn.classList.add('set');
+  } else {
+    btn.textContent = '⚙ Set API Key';
+    btn.classList.remove('set');
+  }
+}
+
+// ── Category ──────────────────────────────────────────────────────────────────
+function selectCat(el) {
+  document.querySelectorAll('.cat-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  selectedCat = el.dataset.cat;
+  const colors = CAT_COLORS[selectedCat] || CAT_COLORS.coding;
+  const tag = document.getElementById('catTag');
+  tag.textContent = selectedCat;
+  tag.style.background = colors.bg;
+  tag.style.color = colors.color;
+  renderExamples();
+}
+
+function renderExamples() {
+  const list = document.getElementById('examplesList');
+  list.innerHTML = '';
+  (EXAMPLES[selectedCat] || []).forEach(ex => {
+    const el = document.createElement('div');
+    el.className = 'ex-item';
+    el.textContent = ex;
+    el.onclick = () => {
+      document.getElementById('question').value = ex;
+      updateCharCount();
+    };
+    list.appendChild(el);
+  });
+}
+
+// ── History ───────────────────────────────────────────────────────────────────
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (!history.length) {
+    list.innerHTML = '<div class="history-empty">No questions yet</div>';
+    return;
+  }
+  list.innerHTML = '';
+  [...history].reverse().slice(0, 10).forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'history-item';
+    el.title = item.question;
+    el.textContent = item.question.slice(0, 60) + (item.question.length > 60 ? '…' : '');
+    el.onclick = () => {
+      document.getElementById('question').value = item.question;
+      updateCharCount();
+      const catEl = document.querySelector(`.cat-item[data-cat="${item.cat}"]`);
+      if (catEl) selectCat(catEl);
+    };
+    list.appendChild(el);
+  });
+}
+
+function addHistory(question, cat) {
+  history = history.filter(h => h.question !== question);
+  history.push({ question, cat, ts: Date.now() });
+  if (history.length > 20) history = history.slice(-20);
+  localStorage.setItem('de_history', JSON.stringify(history));
+  renderHistory();
+}
+
+// ── Char count ────────────────────────────────────────────────────────────────
+function updateCharCount() {
+  const q = document.getElementById('question').value;
+  document.getElementById('charCount').textContent = `${q.length} chars`;
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function openModal() {
+  document.getElementById('apiKeyInput').value = localStorage.getItem('groq_api_key') || '';
+  document.getElementById('modalOverlay').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) { alert('Please enter a key.'); return; }
+  localStorage.setItem('groq_api_key', key);
+  closeModal();
+  checkApiKey();
+}
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+});
+
+// ── Groq API call ─────────────────────────────────────────────────────────────
+async function callAgent(systemPrompt, userContent) {
+  const apiKey = localStorage.getItem('groq_api_key');
+  if (!apiKey) { openModal(); throw new Error('No API key set. Please add your Groq API key.'); }
+
+  const res = await fetch(GROQ_URL, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user',   content: userContent }
+      ],
+      temperature: 0.3,
+      max_tokens: 2048
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `Groq API error: HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  return data.choices[0].message.content;
+}
+
+// ── Pipeline UI helpers ───────────────────────────────────────────────────────
+function setPipeStep(id, state) {
+  const el = document.getElementById('ps-' + id);
+  el.className = 'pipe-step ' + state;
+}
+function setAgentCard(id, state, status) {
+  document.getElementById('ac-' + id).className = 'agent-card ' + state;
+  document.getElementById('st-' + id).textContent = status;
+}
+function showAgentOutput(id, text) {
+  const el = document.getElementById('out-' + id);
+  el.textContent = text.slice(0, 200) + (text.length > 200 ? '…' : '');
+  el.classList.add('show');
+}
+function showError(msg) {
+  const el = document.getElementById('errorBanner');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function hideError() {
+  document.getElementById('errorBanner').classList.remove('show');
+}
+
+// ── Run ───────────────────────────────────────────────────────────────────────
+async function runSwarm() {
+  const question = document.getElementById('question').value.trim();
+  if (!question) { showError('Please enter a question.'); return; }
+
+  if (!localStorage.getItem('groq_api_key')) { openModal(); return; }
+
+  hideError();
+  startTime = Date.now();
+
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div><span>Running...</span>';
+
+  document.getElementById('resultsCard').classList.remove('show');
+  ['reader','solver','validator','optimizer'].forEach(id => {
+    setAgentCard(id, '', 'Idle');
+    document.getElementById('out-' + id).classList.remove('show');
+    setPipeStep(id, '');
+  });
+
+  const results = {};
+
+  try {
+    // Agent 1: Reader
+    setPipeStep('reader', 'active');
+    setAgentCard('reader', 'active', 'Analyzing question...');
+    results.reader = await callAgent(PROMPTS.reader, `Question (category: ${selectedCat}):\n${question}`);
+    setAgentCard('reader', 'done', '✓ Done');
+    setPipeStep('reader', 'done');
+    showAgentOutput('reader', results.reader);
+
+    // Agent 2: Solver
+    setPipeStep('solver', 'active');
+    setAgentCard('solver', 'active', 'Producing solution...');
+    results.solver = await callAgent(PROMPTS.solver, `Question: ${question}\n\nAnalysis:\n${results.reader}`);
+    setAgentCard('solver', 'done', '✓ Done');
+    setPipeStep('solver', 'done');
+    showAgentOutput('solver', results.solver);
+
+    // Agent 3: Validator
+    setPipeStep('validator', 'active');
+    setAgentCard('validator', 'active', 'Validating...');
+    results.validator = await callAgent(PROMPTS.validator, `Original question: ${question}\n\nProposed solution:\n${results.solver}`);
+    setAgentCard('validator', 'done', '✓ Done');
+    setPipeStep('validator', 'done');
+    showAgentOutput('validator', results.validator);
+
+    // Agent 4: Optimizer
+    setPipeStep('optimizer', 'active');
+    setAgentCard('optimizer', 'active', 'Optimizing...');
+    results.optimizer = await callAgent(
+      PROMPTS.optimizer,
+      `Question: ${question}\n\nOriginal solution:\n${results.solver}\n\nValidation:\n${results.validator}`
+    );
+    setAgentCard('optimizer', 'done', '✓ Done');
+    setPipeStep('optimizer', 'done');
+    showAgentOutput('optimizer', results.optimizer);
+
+    lastResults = results;
+    lastQuestion = question;
+    addHistory(question, selectedCat);
+    renderResults(results, question);
+
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    document.getElementById('elapsed').textContent = `Completed in ${elapsed}s`;
+
+  } catch (err) {
+    showError(err.message);
+    ['reader','solver','validator','optimizer'].forEach(id => {
+      if (document.getElementById('ac-' + id).classList.contains('active')) {
+        setAgentCard(id, '', 'Failed');
+        setPipeStep(id, '');
+      }
+    });
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span>▶ Run Swarm</span>';
+  }
+}
+
+// ── Extract section ───────────────────────────────────────────────────────────
+function extractSection(text, heading) {
+  const re = new RegExp(`##\\s*${heading.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\s*\\n([\\s\\S]*?)(?=\\n##|$)`, 'i');
+  const m = text.match(re);
+  return m ? m[1].trim() : '';
+}
+
+function formatCode(text) {
+  // Wrap code blocks in <pre> and prose in <div class="prose">
+  const parts = text.split(/(```[\s\S]*?```)/g);
+  return parts.map(part => {
+    if (part.startsWith('```')) {
+      const code = part.replace(/^```\w*\n?/, '').replace(/```$/, '');
+      return `<pre class="code-block">${escHtml(code)}</pre>`;
+    }
+    return part ? `<div class="prose">${escHtml(part)}</div>` : '';
+  }).join('');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Render results ────────────────────────────────────────────────────────────
+function renderResults(results, question) {
+  const opt = results.optimizer;
+  const finalSol   = extractSection(opt, 'FINAL SOLUTION');
+  const timeC      = extractSection(opt, 'TIME COMPLEXITY');
+  const spaceC     = extractSection(opt, 'SPACE COMPLEXITY');
+  const optsMade   = extractSection(opt, 'OPTIMIZATIONS MADE');
+  const tips       = extractSection(opt, 'INTERVIEW TIPS');
+
+  // Solution tab
+  document.getElementById('tp-solution').innerHTML = `
+    ${formatCode(finalSol || opt)}
+    ${tips ? `<div class="tips-box"><div class="tips-label">💡 Interview Tips</div><div class="tips-content">${escHtml(tips)}</div></div>` : ''}
+  `;
+
+  // Validation tab
+  document.getElementById('tp-validation').innerHTML = `
+    ${formatCode(results.validator)}
+    ${optsMade ? `<div style="margin-top:12px;"><div class="tips-box" style="background:rgba(52,211,153,0.07); border-color:rgba(52,211,153,0.2);"><div class="tips-label" style="color:var(--validator-c)">✓ Optimizations Applied</div><div class="tips-content">${escHtml(optsMade)}</div></div></div>` : ''}
+  `;
+
+  // Complexity tab
+  document.getElementById('tp-complexity').innerHTML = `
+    <div class="complexity-grid">
+      <div class="complexity-box">
+        <div class="complexity-label">⏱ Time Complexity</div>
+        <div class="complexity-value">${escHtml(timeC || 'See solution')}</div>
+      </div>
+      <div class="complexity-box">
+        <div class="complexity-label">💾 Space Complexity</div>
+        <div class="complexity-value">${escHtml(spaceC || 'See solution')}</div>
+      </div>
+    </div>
+    ${optsMade ? `<div class="prose" style="margin-top:8px;">${escHtml(optsMade)}</div>` : ''}
+  `;
+
+  // Analysis tab
+  document.getElementById('tp-analysis').innerHTML = `
+    <div class="prose">${escHtml(results.reader)}</div>
+  `;
+
+  document.getElementById('resultsCard').classList.add('show');
+  document.getElementById('resultsCard').classList.add('fadeIn');
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function showTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tp-' + name).classList.add('active');
+}
+
+// ── Save markdown ─────────────────────────────────────────────────────────────
+function saveMarkdown() {
+  if (!lastResults) return;
+  const ts = new Date().toISOString().slice(0,19).replace(/:/g,'-');
+  const md = `# DE Interview Solution\n\n**Date:** ${ts}  \n**Category:** ${selectedCat}  \n**Model:** ${MODEL}  \n\n---\n\n## Question\n\n${lastQuestion}\n\n---\n\n## Question Analysis\n\n${lastResults.reader}\n\n---\n\n## Initial Solution\n\n${lastResults.solver}\n\n---\n\n## Validation Report\n\n${lastResults.validator}\n\n---\n\n## Final Optimized Solution\n\n${lastResults.optimizer}\n`;
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `de_solution_${selectedCat}_${ts}.md`;
+  a.click();
+}
+</script>
+</body>
+</html>

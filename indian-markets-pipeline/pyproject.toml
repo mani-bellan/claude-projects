@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "markets-pipeline"
+version = "0.1.0"
+description = "Schema-aware Indian stock + SIP pipeline with Airflow + DuckDB"
+requires-python = ">=3.11"
+dependencies = [
+    "duckdb>=1.0.0",
+    "polars>=1.5.0",
+    "yfinance>=0.2.40",
+    "requests>=2.32.0",
+    "pyarrow>=16.0.0",
+    "python-dateutil>=2.9.0",
+]
+
+[project.optional-dependencies]
+dashboard = [
+    "streamlit>=1.36.0",
+    "plotly>=5.22.0",
+    "numpy>=1.26.0",
+    "scipy>=1.13.0",
+]
+dev = [
+    "pytest>=8.2.0",
+    "pytest-cov>=5.0.0",
+    "ruff>=0.5.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/markets_pipeline"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["E501"]

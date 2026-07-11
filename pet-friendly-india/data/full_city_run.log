@@ -1,0 +1,59 @@
+  Float Brewery                                 -> no_pet_mention
+  The Indian Eatery                             -> no_pet_mention
+  Fireside: Flame Craft Dining                  -> no_pet_mention
+  One More Roti Please North Indian Restaurant  -> no_pet_mention
+  Truffles - Kalyan Nagar                       -> no_pet_mention
+  Original Burger Co. : Kalyan Nagar            -> no_pet_mention
+  Fika - Sip Savor                              -> skipped_social
+  Jango Cafe and Cocktail                       -> no_pet_mention
+  Underdoggs Hebbal                             -> fetch_failed
+  Glen’s Bakehouse Sahakarnagar                 -> no_pet_mention
+  Uptown Rooftop Kitchen and Bar - Sahakarnagar -> fetch_failed
+  OMEGA-IX                                      -> policy_found
+  Zenforest Coffee Roasters, Sahakarnagar       -> no_pet_mention
+  Dobaraa                                       -> fetch_failed
+  Chowman (Sahakar Nagar)                       -> no_pet_mention
+  The Bel St.                                   -> skipped_social
+  STARLIGHT BAR & RESTAURANT                    -> no_pet_mention
+  Our Native Village - Eco & Pet Friendly Resor -> no_pet_mention
+  Stargate Villa                                -> no_pet_mention
+  Elim Resorts                                  -> policy_found
+  Water View Holiday Retreat Resorts - Best Res -> no_pet_mention
+  Idam Na Mama, Luxury Homestay by HomeSlice    -> no_pet_mention
+  Holiday Village Resort                        -> policy_found
+  Nirantara Resort - Best Resort in Bengaluru | -> policy_found
+  Nature Amigos Homestay                        -> no_pet_mention
+  The Gari Resorts Kanakapura                   -> no_pet_mention
+  Namma Woodland Spacez Villa                   -> policy_found
+  Valley view Resort                            -> policy_found
+  Aura Kalari                                   -> no_pet_mention
+  Vintage Haven Spacez Villa                    -> policy_found
+  Cascade Castle Spacez Villa                   -> policy_found
+  Mi Casa Su Casa                               -> no_pet_mention
+  Sunlit Serenity: Haven for Happiness          -> no_pet_mention
+  Taj West End, Bengaluru                       -> fetch_failed
+  Vivanta Bengaluru, Whitefield                 -> fetch_failed
+  The Anantaar Rooms and Party Hall             -> no_pet_mention
+  ibis Bengaluru Hosur Road                     -> no_pet_mention
+  ibis Bengaluru City Centre                    -> no_pet_mention
+  GOSHEN INN SUITES & SERVICED APARTMENTS       -> fetch_failed
+  UPAR Hotels Brookefield                       -> no_pet_mention
+  The LaLiT Ashok Bengaluru                     -> fetch_failed
+  Octave Studio Hotel                           -> no_pet_mention
+  Casa Cottage Hotel                            -> policy_found
+  Purple Cloud Urban                            -> policy_found
+  Laika Boutique Stay                           -> no_pet_mention
+  Coastal Grand - Bangalore                     -> policy_found
+  Magaji Comfort Inn | Hotels - Best Hotel in M -> no_pet_mention
+  Grand Mercure Bangalore                       -> policy_found
+  Delta Inn Madiwala                            -> no_pet_mention
+  Hotel City Meridian                           -> fetch_failed
+  Aero View Residency                           -> fetch_failed
+  Seasons Suites-HBR                            -> policy_found
+
+Checked 52 websites: {'no_pet_mention': 28, 'skipped_social': 2, 'fetch_failed': 9, 'policy_found': 13}
+Run `score` to fold the new tier-1 evidence into confidence scores.
+Processed 1582 reviews using Claude (claude-haiku-4-5)
+Scored 337 places.
+Wrote 337 places to /Users/manikandanbellan/Documents/Learn/Claude/pet-friendly-india/web/public/data/places.json
+CHAIN_DONE

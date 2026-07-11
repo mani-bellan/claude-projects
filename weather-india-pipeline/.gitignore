@@ -1,0 +1,22 @@
+# Data landing zones (pipeline state, not source)
+data/source/*
+data/staging/*
+data/archive/*
+data/error/*
+!data/**/.gitkeep
+
+# DuckDB target
+target/*.duckdb
+target/*.duckdb.wal
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Airflow
+airflow.cfg
+airflow.db
+logs/
+standalone_admin_password.txt

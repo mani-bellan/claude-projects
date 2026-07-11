@@ -1,0 +1,118 @@
+name: sales_model
+description: >
+  Sales and revenue semantic model covering orders, products, and customers.
+  Used by Cortex Analyst to answer natural-language business questions.
+
+tables:
+  - name: orders
+    base_table:
+      database: MY_DATABASE
+      schema: MY_SCHEMA
+      table: ORDERS
+    description: One row per sales order. Tracks revenue, quantity, and order status.
+
+    dimensions:
+      - name: order_id
+        expr: ORDER_ID
+        data_type: TEXT
+        description: Unique identifier for each order.
+
+      - name: customer_id
+        expr: CUSTOMER_ID
+        data_type: TEXT
+        description: Foreign key to the customers table.
+
+      - name: product_id
+        expr: PRODUCT_ID
+        data_type: TEXT
+        description: Foreign key to the products table.
+
+      - name: region
+        expr: REGION
+        data_type: TEXT
+        description: Geographic region where the order was placed.
+        sample_values: [North America, EMEA, APAC, LATAM]
+
+      - name: order_status
+        expr: STATUS
+        data_type: TEXT
+        description: Current order status.
+        sample_values: [completed, pending, cancelled, refunded]
+
+      - name: sales_channel
+        expr: CHANNEL
+        data_type: TEXT
+        description: Channel through which the order was placed.
+        sample_values: [online, in-store, partner, direct]
+
+    time_dimensions:
+      - name: order_date
+        expr: ORDER_DATE
+        data_type: DATE
+        description: The calendar date the order was placed.
+
+      - name: shipped_at
+        expr: SHIPPED_AT
+        data_type: TIMESTAMP
+        description: Timestamp when the order was dispatched.
+
+    measures:
+      - name: revenue
+        expr: REVENUE_USD
+        data_type: NUMBER
+        default_aggregation: sum
+        description: Total revenue in USD for this order line.
+
+      - name: quantity
+        expr: QUANTITY
+        data_type: NUMBER
+        default_aggregation: sum
+        description: Number of units ordered.
+
+      - name: discount_amount
+        expr: DISCOUNT_USD
+        data_type: NUMBER
+        default_aggregation: sum
+        description: Discount applied to this order in USD.
+
+      - name: order_count
+        expr: ORDER_ID
+        data_type: NUMBER
+        default_aggregation: count_distinct
+        description: Number of distinct orders.
+
+  - name: products
+    base_table:
+      database: MY_DATABASE
+      schema: MY_SCHEMA
+      table: PRODUCTS
+    description: Product catalog with category and pricing.
+
+    dimensions:
+      - name: product_id
+        expr: PRODUCT_ID
+        data_type: TEXT
+        description: Unique product identifier.
+
+      - name: product_name
+        expr: PRODUCT_NAME
+        data_type: TEXT
+        description: Human-readable product name.
+
+      - name: category
+        expr: CATEGORY
+        data_type: TEXT
+        description: Top-level product category.
+        sample_values: [Electronics, Apparel, Home, Sports, Beauty]
+
+      - name: subcategory
+        expr: SUBCATEGORY
+        data_type: TEXT
+        description: Product subcategory within the category.
+
+    measures:
+      - name: list_price
+        expr: LIST_PRICE_USD
+        data_type: NUMBER
+        default_aggregation: avg
+        description: Standard list price in USD.
