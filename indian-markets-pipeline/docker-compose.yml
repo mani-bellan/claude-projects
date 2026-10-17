@@ -21,6 +21,9 @@ x-airflow-common: &airflow-common
     SCHEMA_REGISTRY_PATH: /opt/project/data/schema_registry.json
     STOCK_UNIVERSE: ${STOCK_UNIVERSE:-NIFTY_500}
     BACKFILL_YEARS: ${BACKFILL_YEARS:-20}
+    # Failure triage with Jev (see README). Without a key, failures behave exactly as before.
+    TYPESAFE_API_KEY: ${TYPESAFE_API_KEY:-}
+    TRIAGE_MODE: ${TRIAGE_MODE:-shadow}
   volumes:
     - ./airflow/dags:/opt/airflow/dags
     - ./airflow/logs:/opt/airflow/logs

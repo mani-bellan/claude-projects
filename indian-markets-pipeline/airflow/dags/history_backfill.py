@@ -11,6 +11,8 @@ from datetime import datetime, timedelta
 
 from airflow.decorators import dag, task
 
+from _lib import triaged
+
 DEFAULT_ARGS = {
     "owner": "data-eng",
     "retries": 1,
@@ -78,6 +80,7 @@ CURATED_SCHEME_CODES = [
 def history_backfill_dag():
 
     @task
+    @triaged(downstream=['backfill_stocks', 'backfill_navs', 'daily_prices'])
     def refresh_universe() -> dict:
         import polars as pl
 
@@ -99,6 +102,7 @@ def history_backfill_dag():
         return {"stocks": su.rows_loaded, "mf_master": mm.rows_loaded}
 
     @task
+    @triaged(downstream=['feature_build', 'stock_features', 'stock_recommendations', 'educational Streamlit dashboard (not financial advice)'])
     def backfill_stocks() -> dict:
         from datetime import date, timedelta as td
 
@@ -126,6 +130,7 @@ def history_backfill_dag():
         }
 
     @task
+    @triaged(downstream=['feature_build', 'mf_features', 'mf_recommendations', 'educational Streamlit dashboard (not financial advice)'])
     def backfill_navs() -> dict:
         from datetime import date, timedelta as td
 

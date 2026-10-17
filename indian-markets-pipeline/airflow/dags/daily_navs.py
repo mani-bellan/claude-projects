@@ -10,6 +10,8 @@ from datetime import datetime, timedelta
 
 from airflow.decorators import dag, task
 
+from _lib import triaged
+
 DEFAULT_ARGS = {
     "owner": "data-eng",
     "retries": 3,
@@ -38,6 +40,7 @@ CURATED_SCHEME_CODES = [
 def daily_navs_dag():
 
     @task
+    @triaged(downstream=['feature_build', 'mf_features', 'mf_recommendations', 'educational Streamlit dashboard (not financial advice): SIP Recommender, Portfolio Simulator pages'])
     def fetch_and_load(data_interval_end=None) -> dict:
         from datetime import date, timedelta as td
 

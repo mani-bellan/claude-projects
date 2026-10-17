@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 
 from airflow.decorators import dag, task
 
+from _lib import triaged
+
 DEFAULT_ARGS = {
     "owner": "data-eng",
     "retries": 3,
@@ -26,6 +28,7 @@ DEFAULT_ARGS = {
 def daily_prices_dag():
 
     @task
+    @triaged(downstream=['feature_build', 'stock_features', 'stock_recommendations', 'educational Streamlit dashboard (not financial advice): Recommendations, Stock Explorer, Portfolio Simulator pages'])
     def fetch_and_load(data_interval_end=None) -> dict:
         from datetime import date, timedelta as td
 

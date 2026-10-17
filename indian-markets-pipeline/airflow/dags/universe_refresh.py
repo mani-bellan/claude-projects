@@ -11,6 +11,8 @@ from datetime import datetime, timedelta
 
 from airflow.decorators import dag, task
 
+from _lib import triaged
+
 DEFAULT_ARGS = {
     "owner": "data-eng",
     "retries": 2,
@@ -31,6 +33,7 @@ DEFAULT_ARGS = {
 def universe_refresh_dag():
 
     @task
+    @triaged(downstream=['daily_prices', 'stock_universe'])
     def refresh_stocks() -> int:
         import polars as pl
 
@@ -46,6 +49,7 @@ def universe_refresh_dag():
         return result.rows_loaded
 
     @task
+    @triaged(downstream=['mf_scheme_master'])
     def refresh_mfs() -> int:
         from markets_pipeline.extractors import universe
 

@@ -11,6 +11,8 @@ from datetime import datetime, timedelta
 
 from airflow.decorators import dag, task
 
+from _lib import triaged
+
 DEFAULT_ARGS = {
     "owner": "data-eng",
     "retries": 2,
@@ -31,6 +33,7 @@ DEFAULT_ARGS = {
 def feature_build_dag():
 
     @task
+    @triaged(upstream=['daily_prices DAG (loads stock_prices)', 'daily_navs DAG (loads mf_navs)'], downstream=['stock_recommendations', 'mf_recommendations', 'educational Streamlit dashboard (not financial advice): Recommendations, Stock Explorer, SIP Recommender, Portfolio Simulator pages'])
     def build() -> dict:
         from markets_pipeline.transformers import _pipeline
 

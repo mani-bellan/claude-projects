@@ -50,6 +50,31 @@ Every load passes through `SchemaEvolution.reconcile(table, df, primary_key)`:
 
 Every change — applied or rejected — is logged to `_schema_evolution_log`.
 
+## Failure triage with Jev
+
+Every DAG task is wrapped in `@triaged` (`airflow/dags/_lib.py`). When a task fails, one call to
+[Jev](https://docs.typesafe.ai/introduction), TypeSafe AI's decision model, classifies the cause
+and the impact, and `markets_pipeline/triage.py` turns them into **retry**, **ticket**, **page**,
+or **review**. Adapted from [jev-apps](https://github.com/mani-bellan/jev-apps).
+
+It also catches silent failures: the extractors log a warning and continue when a fetch fails,
+so a run where every fetch failed used to succeed with 0 rows. Such a run now fails, as does a
+batch the schema engine quarantined. A run that loads nothing without warnings (a market holiday)
+still passes.
+
+| Setting | Effect |
+|---|---|
+| No `TYPESAFE_API_KEY` | Nothing changes |
+| `TRIAGE_MODE=shadow` (default) | Decisions are appended to `data/triage_log.jsonl`; Airflow retries as configured |
+| `TRIAGE_MODE=act` | A decision other than retry also stops the remaining Airflow retries |
+
+Set the key in `.env` (never commit it). To check the decisions on realistic failures (an
+unreachable API, a locked DuckDB file, a schema conflict, a typo, and more), run:
+
+```bash
+TYPESAFE_API_KEY=... .venv/bin/python scripts/triage_scenarios.py
+```
+
 ## Disclaimer
 
 Built for learning. Past performance ≠ future returns. Consult a SEBI-registered advisor for actual investment decisions.
