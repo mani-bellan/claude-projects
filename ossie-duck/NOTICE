@@ -1,0 +1,15 @@
+ossie-duck
+Copyright 2026 the ossie-duck authors
+
+This project is an independent, third-party implementation. It is not
+affiliated with, endorsed by, or an official product of the Apache Software
+Foundation.
+
+It bundles two files taken unmodified from the Apache Ossie (incubating)
+project (https://github.com/apache/ossie), which is licensed under the
+Apache License, Version 2.0:
+
+  - src/ossie_duck/schema/ossie-schema.json   (core-spec/ossie-schema.json)
+  - examples/tpcds_semantic_model.yaml        (examples/tpcds_semantic_model.yaml)
+
+Both correspond to Apache Ossie specification version 0.2.0.dev0.

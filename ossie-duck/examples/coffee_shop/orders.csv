@@ -1,0 +1,25 @@
+order_id,customer_id,product,quantity,unit_price,order_date
+1,1,Espresso Beans,2,18.50,2026-01-03
+2,2,Ceramic Mug,1,12.00,2026-01-05
+3,3,Cold Brew Kit,1,24.00,2026-01-09
+4,1,Green Tea,3,9.75,2026-01-12
+5,4,Espresso Beans,1,18.50,2026-01-15
+6,5,Pour-over Filters,4,6.25,2026-01-19
+7,6,Cold Brew Kit,2,24.00,2026-01-23
+8,7,Ceramic Mug,2,12.00,2026-01-28
+9,2,Espresso Beans,3,18.50,2026-02-02
+10,3,Green Tea,1,9.75,2026-02-04
+11,8,Espresso Beans,2,18.50,2026-02-08
+12,4,Cold Brew Kit,1,24.00,2026-02-11
+13,5,Ceramic Mug,3,12.00,2026-02-14
+14,1,Pour-over Filters,2,6.25,2026-02-18
+15,6,Green Tea,2,9.75,2026-02-21
+16,7,Espresso Beans,1,18.50,2026-02-25
+17,3,Cold Brew Kit,3,24.00,2026-03-02
+18,2,Pour-over Filters,5,6.25,2026-03-06
+19,8,Ceramic Mug,1,12.00,2026-03-10
+20,4,Espresso Beans,2,18.50,2026-03-14
+21,5,Green Tea,4,9.75,2026-03-18
+22,6,Espresso Beans,1,18.50,2026-03-22
+23,1,Cold Brew Kit,1,24.00,2026-03-25
+24,7,Ceramic Mug,2,12.00,2026-03-28

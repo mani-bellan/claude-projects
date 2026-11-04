@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ossie-duck"
+version = "0.2.0"
+description = "A small semantic query engine: compile Apache Ossie semantic models to SQL and run them on DuckDB"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+dependencies = [
+    "duckdb>=1.1",
+    "sqlglot>=25",
+    "pyyaml>=6",
+    "jsonschema>=4.18",
+]
+
+[project.optional-dependencies]
+ai = ["anthropic>=0.40"]
+# REST API. FastAPI's test client also needs httpx (included in dev).
+serve = ["fastapi>=0.110", "uvicorn>=0.29"]
+# MCP server. Targets the mcp 2.x SDK (MCPServer; 1.x called it FastMCP).
+mcp = ["mcp>=2.0,<3"]
+all = ["ossie-duck[ai,serve,mcp]"]
+dev = ["ossie-duck[serve,mcp]", "pytest>=8", "httpx>=0.27"]
+
+[project.scripts]
+ossie-duck = "ossie_duck.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ossie_duck"]
+
+# ship the example model so `ossie-duck demo` works from a wheel
+[tool.hatch.build.targets.wheel.force-include]
+"examples/tpcds_semantic_model.yaml" = "ossie_duck/examples/tpcds_semantic_model.yaml"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

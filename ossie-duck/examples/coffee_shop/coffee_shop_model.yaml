@@ -1,0 +1,101 @@
+# A small semantic model: the business definitions for a coffee shop's online orders.
+# The words people use ("revenue", "average order value") are defined ONCE here.
+# Everything else (the command line, the REST API, AI agents) reads this file.
+
+version: "0.2.0.dev0"
+
+name: coffee_shop
+description: Online orders for a small coffee shop, January to March 2026
+ai_context:
+  instructions: "Revenue is quantity times unit price, before tax. Use order_month for monthly trends."
+
+datasets:
+  - name: orders
+    # Where the data lives. "shop.public" is a label; the --rebind option maps it to your database.
+    source: shop.public.orders
+    primary_key: [order_id]
+    description: One row per customer order
+    fields:
+      - name: order_id
+        expression: { sql: order_id }
+        datatype: Integer
+        description: Order number
+      - name: customer_id
+        expression: { sql: customer_id }
+        datatype: Integer
+        description: Who placed the order
+      - name: product
+        expression: { sql: product }
+        datatype: String
+        description: What was bought
+        ai_context:
+          synonyms: ["item", "what they bought"]
+      - name: order_date
+        expression: { sql: order_date }
+        datatype: Date
+        description: Day the order was placed
+      - name: order_month
+        # A field can be computed. This one uses a DuckDB-specific function, so it is declared for the DUCKDB dialect.
+        expression:
+          dialects:
+            - dialect: DUCKDB
+              expression: "strftime(order_date, '%Y-%m')"
+        datatype: String
+        dimension: { is_time: true }
+        description: Month of the order, like 2026-02
+      - name: line_total
+        expression: { sql: quantity * unit_price }
+        datatype: Decimal
+        description: Money for this order, before tax (quantity times unit price)
+    metrics:
+      # A metric that belongs to one dataset: refer to it as orders.order_count
+      - name: order_count
+        expression: { sql: COUNT(order_id) }
+        datatype: Integer
+        description: Number of orders
+
+  - name: customers
+    source: shop.public.customers
+    primary_key: [customer_id]
+    description: People who have bought from the shop
+    fields:
+      - name: customer_id
+        expression: { sql: customer_id }
+        datatype: Integer
+        description: Customer number
+      - name: customer_name
+        expression: { sql: name }
+        datatype: String
+        description: Customer's full name
+      - name: country
+        expression: { sql: country }
+        datatype: String
+        description: Where the customer lives
+        ai_context:
+          synonyms: ["market", "region", "location"]
+
+relationships:
+  # Many orders belong to one customer. This is how the engine knows how to join the two.
+  - name: orders_to_customers
+    from: orders
+    to: customers
+    from_columns: [customer_id]
+    to_columns: [customer_id]
+
+metrics:
+  - name: revenue
+    expression: { sql: SUM(orders.line_total) }
+    datatype: Decimal
+    description: Total money earned from orders, before tax
+    ai_context:
+      synonyms: ["sales", "income", "turnover"]
+  - name: average_order_value
+    expression: { sql: SUM(orders.line_total) / COUNT(DISTINCT orders.order_id) }
+    datatype: Decimal
+    description: Revenue divided by the number of orders
+    ai_context:
+      synonyms: ["AOV", "basket size", "average basket"]
+  - name: active_customers
+    expression: { sql: COUNT(DISTINCT customers.customer_id) }
+    datatype: Integer
+    description: Number of different customers who placed at least one order

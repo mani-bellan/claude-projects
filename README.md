@@ -12,6 +12,12 @@ A collection of data engineering and AI projects built while exploring Claude, C
 | [agentic-data-pipeline](agentic-data-pipeline/) | An LLM-driven agent that plans and executes data pipeline steps against DuckDB. |
 | [pet-friendly-india](pet-friendly-india/) | Aggregates pet-friendly places from web data, with LLM evidence extraction from reviews. |
 
+## Semantic layer
+
+| Project | What it does |
+| --- | --- |
+| [ossie-duck](ossie-duck/) | Semantic query engine: define metrics once in an Apache Ossie model, then query them from a CLI, REST API, MCP server (for AI assistants) or Python, all running on DuckDB. |
+
 ## Snowflake / Cortex
 
 | Project | What it does |
