@@ -1,9 +1,5 @@
 # Define your metrics once: what Apache Ossie can do, shown with a working engine on DuckDB
 
-*Publishing notes (delete before posting): upload `docs/blog-1-same-metric-everywhere.png` as the cover image and `docs/blog-2-architecture.png` where marked. A short LinkedIn teaser is at the bottom of this file.*
-
----
-
 Ask three colleagues for "last quarter's revenue" and you can get three different numbers.
 
 One included tax. One left out refunds. One counted only paid orders. Nobody was wrong, exactly. Each of them was using a slightly different definition, buried in a different dashboard, spreadsheet or SQL query. The next meeting is then spent arguing about whose number is right instead of what to do about it.
@@ -175,23 +171,3 @@ ossie-duck demo
 The README has a hands-on coffee-shop walkthrough, six architecture diagrams, and instructions for connecting an AI assistant. The code is here: **https://github.com/mani-bellan/claude-projects/tree/main/ossie-duck**
 
 If your team has ever argued about whose number is right, I'd like to hear how you handle metric definitions today. A semantic layer, a wiki, tribal knowledge, or just hoping for the best?
-
----
-
-## LinkedIn teaser (paste as the post text, link the blog or repo in the first comment)
-
-Ask three colleagues for "last quarter's revenue" and you can get three different numbers. Add an AI assistant that writes its own SQL, and you get four.
-
-Apache Ossie is an open standard for writing metric definitions once. To see what it can really do, I built **ossie-duck** over a weekend: an engine that reads an Ossie model (datasets, relationships, metrics, dialects, AI synonyms) and answers questions from it on DuckDB, through a CLI, a REST API, Python and AI assistants via MCP.
-
-The part I like most: the AI never writes SQL. It picks metric names, and a compiler builds the query, with API keys, row caps, timeouts and mandatory filters around it.
-
-Change one line in the Ossie model, and every tool shows the new number.
-
-It's a learning project (draft spec, one fact table per question), with 180 tests and a README with architecture diagrams for technical and non-technical readers.
-
-Code and write-up: https://github.com/mani-bellan/claude-projects/tree/main/ossie-duck
-
-How does your team keep metric definitions consistent?
-
-#DataEngineering #SemanticLayer #DuckDB #ApacheOssie #MCP #Python
