@@ -1,4 +1,4 @@
-# Define your metrics once: a semantic layer with Apache Ossie and DuckDB
+# Define your metrics once: what Apache Ossie can do, shown with a working engine on DuckDB
 
 *Publishing notes (delete before posting): upload `docs/blog-1-same-metric-everywhere.png` as the cover image and `docs/blog-2-architecture.png` where marked. A short LinkedIn teaser is at the bottom of this file.*
 
@@ -10,7 +10,7 @@ One included tax. One left out refunds. One counted only paid orders. Nobody was
 
 Now add an AI assistant. You ask it the same question in plain English, and it writes its own SQL with its own idea of what "revenue" means. That makes four numbers.
 
-I wanted to see what it takes to fix this properly, so I built a small project over a weekend: **ossie-duck**.
+There's an open standard aimed at exactly this problem: **Apache Ossie**. To understand what it can really do, I didn't want to read the spec. I wanted to use it. So over a weekend I built **ossie-duck**, a small engine whose whole purpose is to show Ossie's capabilities working end to end: take an Ossie model file, and answer real questions from it.
 
 ![One definition, used by every tool](docs/blog-1-same-metric-everywhere.png)
 
@@ -18,9 +18,71 @@ I wanted to see what it takes to fix this properly, so I built a small project o
 
 The fix has a name: a **semantic layer**. It's a file where you say, once, what your business terms mean. "Revenue is quantity times unit price." "An active customer is one with an order in the period." Every tool then asks that file what the words mean, instead of making up its own answer.
 
-What makes this exciting now is that there's an open standard for such files: **Apache Ossie** (formerly the Open Semantic Interchange). It defines a vendor-neutral, YAML-based format for datasets, relationships and metrics, so a definition written once can in principle travel between tools.
+**Apache Ossie** (formerly the Open Semantic Interchange) is an open, vendor-neutral standard for writing that file. Its promise is portability: a definition written once, in one format, can be read by any tool that understands the standard, instead of being locked inside one BI product. Ossie is still an incubating Apache project, and the version I built against (`0.2.0.dev0`) is a draft.
 
-A standard is only useful if something reads it, so I built a small engine that does. It reads an Ossie model and answers questions from it, running on [DuckDB](https://duckdb.org), a fast analytical database that runs on a laptop with nothing to install.
+A standard is only as useful as the things that read it. So the question this project answers is: **what does an Ossie model actually let a tool do?**
+
+## What's inside an Ossie model
+
+An Ossie model is a plain YAML file. Here is a trimmed-down version of the coffee-shop model that ships with the project:
+
+```yaml
+version: "0.2.0.dev0"
+name: coffee_shop
+ai_context:
+  instructions: "Revenue is quantity times unit price, before tax."
+
+datasets:
+  - name: orders
+    source: shop.public.orders
+    primary_key: [order_id]
+    fields:
+      - name: line_total
+        expression: { sql: quantity * unit_price }
+        description: Money for this order, before tax
+      - name: order_month
+        expression:
+          dialects:
+            - dialect: DUCKDB
+              expression: "strftime(order_date, '%Y-%m')"
+        dimension: { is_time: true }
+  - name: customers
+    source: shop.public.customers
+    fields:
+      - name: country
+        expression: { sql: country }
+        ai_context:
+          synonyms: ["market", "region", "location"]
+
+relationships:
+  - name: orders_to_customers
+    from: orders
+    to: customers
+    from_columns: [customer_id]
+    to_columns: [customer_id]
+
+metrics:
+  - name: revenue
+    expression: { sql: SUM(orders.line_total) }
+    description: Total money earned from orders, before tax
+    ai_context:
+      synonyms: ["sales", "income", "turnover"]
+```
+
+That's all it takes to describe a small business. Each part of the file is a capability, and each one is something ossie-duck puts to work:
+
+| What the Ossie model contains | What it means | How ossie-duck uses it |
+|---|---|---|
+| **Datasets and fields** | The tables, and the columns or computed values in them | Each dataset becomes a building block of the query. Only the fields a question needs are pulled in. |
+| **Relationships** | "Many orders belong to one customer," and which columns link them | The engine works out the joins itself, so nobody writes `JOIN` by hand. It also warns when a join could double-count. |
+| **Metrics** | Named business calculations, defined once, either for the whole model or for one dataset | "Revenue" and "average order value" are looked up by name and used as written, never reinvented. |
+| **Dialects** | The same expression written for different databases | The engine picks the one that runs on DuckDB, and says so clearly if a metric only exists for another database. |
+| **`ai_context`** | Descriptions, synonyms and instructions meant for AI | This is what an AI assistant sees. Ask for "sales" or "turnover" and it finds `revenue`. |
+| **The schema** | A formal definition of what a valid model looks like | Every model is checked against it on load, with "did you mean…?" suggestions for typos. |
+
+A few Ossie features are not covered yet: fields that refer to other fields, metrics built from other metrics, and `custom_extensions`, which the engine carries along but doesn't interpret. The limitations section at the end says more.
+
+The result: **one file describes the business, and a generic engine can do real work with it** without knowing anything about coffee shops.
 
 ## What it does
 
@@ -41,7 +103,7 @@ Germany   100.00
 (4 rows)
 ```
 
-You never said which tables to use, how to join orders to customers, or what "revenue" is. The model knew all three. The tool read it, worked out the join, wrote the SQL and ran it.
+You never said which tables to use, how to join orders to customers, or what "revenue" is. The Ossie model knew all three: the datasets, the relationship and the metric. The engine read it, worked out the join, wrote the SQL and ran it on DuckDB.
 
 The same model is available through four "front doors":
 
@@ -58,7 +120,7 @@ Four ways in, one source of truth. A person at a terminal, a dashboard and an AI
 
 The project includes a tiny coffee-shop dataset: 8 customers, 24 orders. Revenue by country comes to 688.25 in total.
 
-Now I open the model file and change one line, so that revenue no longer counts mugs:
+Now I open the Ossie model file and change one line, so that revenue no longer counts mugs:
 
 ```yaml
 expression: { sql: "SUM(CASE WHEN orders.product <> 'Ceramic Mug' THEN orders.line_total ELSE 0 END)" }
@@ -66,7 +128,7 @@ expression: { sql: "SUM(CASE WHEN orders.product <> 'Ceramic Mug' THEN orders.li
 
 I rerun the same command, and India drops from 231.25 to 219.25. UK, USA and Germany change too. I didn't touch the query, the dashboard code or any prompt. Every front door shows the new answer, because they all read the same definition.
 
-That's the whole point of the project. It's the difference between "we should align on this metric" and the metric actually being aligned.
+That's the promise of Ossie, shown working. It's the difference between "we should align on this metric" and the metric actually being aligned.
 
 ## Why I'm comfortable letting an AI use it
 
@@ -120,11 +182,11 @@ If your team has ever argued about whose number is right, I'd like to hear how y
 
 Ask three colleagues for "last quarter's revenue" and you can get three different numbers. Add an AI assistant that writes its own SQL, and you get four.
 
-Over a weekend I built **ossie-duck**: write what "revenue" means once, in an open Apache Ossie model file, and every tool reads that same definition: a command line, a REST API, Python, and AI assistants through MCP.
+Apache Ossie is an open standard for writing metric definitions once. To see what it can really do, I built **ossie-duck** over a weekend: an engine that reads an Ossie model (datasets, relationships, metrics, dialects, AI synonyms) and answers questions from it on DuckDB, through a CLI, a REST API, Python and AI assistants via MCP.
 
 The part I like most: the AI never writes SQL. It picks metric names, and a compiler builds the query, with API keys, row caps, timeouts and mandatory filters around it.
 
-Change one line in the model, and every tool shows the new number.
+Change one line in the Ossie model, and every tool shows the new number.
 
 It's a learning project (draft spec, one fact table per question), with 180 tests and a README with architecture diagrams for technical and non-technical readers.
 
