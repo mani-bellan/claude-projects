@@ -180,6 +180,31 @@ def cmd_list(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_graph(args: argparse.Namespace) -> int:
+    from . import graph as g
+
+    model = load_model(args.model)
+    graph = g.build_graph(model)
+    fmt = args.format
+    if fmt is None:
+        suffix = Path(args.output).suffix.lower() if args.output else ""
+        fmt = {".html": "html", ".htm": "html", ".json": "json"}.get(suffix, "mermaid")
+    if fmt == "html":
+        text = g.to_html(graph, title=args.title)
+    elif fmt == "json":
+        text = g.to_json(graph)
+    else:
+        text = g.to_mermaid(graph, fields=args.fields, synonyms=not args.no_synonyms)
+        if args.output and Path(args.output).suffix.lower() == ".md":
+            text = f"```mermaid\n{text}```\n"
+    if args.output:
+        Path(args.output).write_text(text, encoding="utf-8")
+        print(f"wrote {args.output} ({fmt})", file=sys.stderr)
+    else:
+        sys.stdout.write(text)
+    return 0
+
+
 def cmd_sql(args: argparse.Namespace) -> int:
     model = load_model(args.model)
     compiled = Engine(model, rebind=_rebind(args)).compile(_request(args))
@@ -373,6 +398,15 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("list", help="list the metrics, fields and relationships of a model")
     p.add_argument("model")
     p.set_defaults(func=cmd_list)
+
+    p = sub.add_parser("graph", help="draw the model as a graph: Mermaid, interactive HTML or JSON")
+    p.add_argument("model")
+    p.add_argument("-o", "--output", metavar="FILE", help="write to FILE instead of printing (the extension picks the format: .html, .json, .md/.mmd)")
+    p.add_argument("--format", choices=["mermaid", "html", "json"], help="default: from the -o extension, else mermaid")
+    p.add_argument("--fields", action="store_true", help="Mermaid only: also draw every field (best for small models; the HTML page has a toggle)")
+    p.add_argument("--no-synonyms", action="store_true", help="Mermaid only: leave out the synonyms")
+    p.add_argument("--title", help="HTML only: page title")
+    p.set_defaults(func=cmd_graph)
 
     p = sub.add_parser("sql", help="print the SQL for a query without running it")
     p.add_argument("model")

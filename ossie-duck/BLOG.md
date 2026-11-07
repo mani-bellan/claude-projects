@@ -80,6 +80,34 @@ A few Ossie features are not covered yet: fields that refer to other fields, met
 
 The result: **one file describes the business, and a generic engine can do real work with it** without knowing anything about coffee shops.
 
+## The model as a picture: an ontology graph
+
+A table in a blog post only goes so far. The real shape of an Ossie model is a graph: tables connected by relationships, metrics built from fields, and synonyms pointing at the things they rename. So I added one more command that draws exactly that:
+
+```bash
+ossie-duck graph coffee_shop_model.yaml
+```
+
+It reads the model file (no database needed) and produces a diagram. Every Ossie concept from the table above gets its own shape: datasets are green cylinders, metrics are yellow hexagons, synonyms are purple pills, and the thick arrow is the "many orders belong to one customer" relationship. The dashed "uses" arrows come from reading each metric's formula and finding the fields inside it.
+
+![The coffee-shop model as a graph](docs/graph-mermaid-overview.png)
+
+Read it left to right and you get the whole business in five seconds. "Revenue", also called sales, income or turnover, is calculated from the orders table. Orders connect to customers, so "revenue by country" is possible even though nobody wrote a join.
+
+The same command can also write a **single interactive HTML page**, which you open in any browser. It works offline, so you can email it. You can drag nodes around, zoom, search for a word like "turnover" to see which metric it belongs to, and click anything to read what it means, its formula and what it connects to.
+
+![The interactive graph, with the orders dataset selected](docs/graph-interactive-coffee-shop.png)
+
+Tick "Fields" and the page shows every column and which metric reads it. That makes it handy as a quick review of a model before anyone relies on it. A metric with no arrow into any field, or a table that nothing connects to, stands out in a picture much more than in a page of YAML.
+
+![Fields shown: which metric reads which column](docs/graph-interactive-fields.png)
+
+It also copes with a bigger model. This is the official TPC-DS retail example, with five datasets and nine metrics:
+
+![The TPC-DS example model](docs/graph-interactive-tpcds.png)
+
+The graph command can also print Mermaid, a text format that GitHub and many documentation tools draw automatically, so the diagram in a README can be regenerated from the model whenever the model changes. In the repo, a test fails if the README's diagram ever drifts from what the tool prints.
+
 ## What it does
 
 You ask for things by name, not by SQL:
@@ -146,7 +174,7 @@ None of this makes it production-ready on its own. It does mean the safe path is
 
 **Most of the engineering is in the unglamorous parts.** The core idea, turning names into joins and SQL, fits in a small compiler. Most of the work went into the edges: validating the model with helpful messages, refusing ambiguous questions instead of guessing, and making error messages tell a newcomer what to do next.
 
-**Tests earned their keep.** The project has 180 automated tests, many of which compare results with hand-written SQL. They caught real bugs, including a query-timeout test that was itself too heavy and filled the disk of my sandbox. I replaced it with a streaming test that runs in a fraction of a second.
+**Tests earned their keep.** The project has 214 automated tests, many of which compare results with hand-written SQL. They caught real bugs, including a query-timeout test that was itself too heavy and filled the disk of my sandbox. I replaced it with a streaming test that runs in a fraction of a second.
 
 **The AI tooling is moving fast.** The MCP SDK I used had renamed its main class between major versions, and its default behaviour hides tool error messages from the model. I had to map expected errors explicitly so the assistant would see "did you mean `revenue`?" instead of a generic failure.
 
@@ -166,8 +194,9 @@ cd claude-projects/ossie-duck
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[all]"
 ossie-duck demo
+ossie-duck graph examples/coffee_shop/coffee_shop_model.yaml -o graph.html   # then open graph.html
 ```
 
-The README has a hands-on coffee-shop walkthrough, six architecture diagrams, and instructions for connecting an AI assistant. The code is here: **https://github.com/mani-bellan/claude-projects/tree/main/ossie-duck**
+The README has a hands-on coffee-shop walkthrough, a section on the graph command, six architecture diagrams, and instructions for connecting an AI assistant. The code is here: **https://github.com/mani-bellan/claude-projects/tree/main/ossie-duck**
 
 If your team has ever argued about whose number is right, I'd like to hear how you handle metric definitions today. A semantic layer, a wiki, tribal knowledge, or just hoping for the best?

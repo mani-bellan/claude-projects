@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>coffee_shop: ontology graph</title>
+<style>
+  :root {
+    --bg: #ffffff; --panel: #f6f8fa; --text: #1f2933; --muted: #5f6b7a; --line: #c5ccd6; --accent: #2b6cb0;
+    --dataset-fill: #e6f6ec; --dataset-stroke: #2f855a; --dataset-text: #12361f;
+    --metric-fill: #fff3d6; --metric-stroke: #b7791f; --metric-text: #3b2a06;
+    --field-fill: #eef2f7; --field-stroke: #64748b; --field-text: #1e293b;
+    --synonym-fill: #f3e8ff; --synonym-stroke: #805ad5; --synonym-text: #3b1f66;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #11151a; --panel: #1a2028; --text: #e6e9ee; --muted: #9aa5b4; --line: #3a4552; --accent: #63b3ed;
+      --dataset-fill: #173326; --dataset-stroke: #48bb78; --dataset-text: #d3f2df;
+      --metric-fill: #3a2d0f; --metric-stroke: #ecc94b; --metric-text: #fbefc7;
+      --field-fill: #232b36; --field-stroke: #8392a5; --field-text: #dbe3ee;
+      --synonym-fill: #2c2140; --synonym-stroke: #b794f4; --synonym-text: #eadcff;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+         display: flex; flex-direction: column; }
+  header { padding: 12px 16px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+  header h1 { font-size: 16px; margin: 0; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-left: auto; }
+  .controls label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+  input[type=search] { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; width: 170px; }
+  button { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  main { flex: 1; min-height: 0; display: flex; }
+  #stage { flex: 1; min-width: 0; position: relative; }
+  svg { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+  svg.panning { cursor: grabbing; }
+  aside { width: 300px; max-width: 40%; border-left: 1px solid var(--line); background: var(--panel); padding: 14px; overflow: auto; }
+  aside h2 { font-size: 15px; margin: 0 0 4px; word-break: break-word; }
+  aside .kind { color: var(--muted); text-transform: uppercase; letter-spacing: .04em; font-size: 11px; margin-bottom: 8px; }
+  aside dl { margin: 0; }
+  aside dt { color: var(--muted); font-size: 12px; margin-top: 10px; }
+  aside dd { margin: 2px 0 0; word-break: break-word; }
+  aside code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 1px 4px; display: inline-block; max-width: 100%; white-space: pre-wrap; }
+  .legend { position: absolute; left: 12px; bottom: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 12px; display: grid; gap: 4px; }
+  .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; border: 2px solid; vertical-align: -2px; margin-right: 6px; }
+  .hint { position: absolute; right: 12px; bottom: 12px; color: var(--muted); font-size: 12px; background: var(--bg); padding: 2px 6px; border-radius: 6px; }
+  .node { cursor: pointer; outline: none; }
+  .node rect, .node polygon, .node ellipse { stroke-width: 2; }
+  .node text { font-size: 12px; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+  .node.dataset rect { fill: var(--dataset-fill); stroke: var(--dataset-stroke); } .node.dataset text { fill: var(--dataset-text); font-weight: 600; }
+  .node.metric polygon { fill: var(--metric-fill); stroke: var(--metric-stroke); } .node.metric text { fill: var(--metric-text); }
+  .node.field rect { fill: var(--field-fill); stroke: var(--field-stroke); } .node.field text { fill: var(--field-text); }
+  .node.synonym ellipse { fill: var(--synonym-fill); stroke: var(--synonym-stroke); stroke-dasharray: 4 3; } .node.synonym text { fill: var(--synonym-text); }
+  .node:focus rect, .node:focus polygon, .node:focus ellipse { stroke: var(--accent); stroke-width: 3.5; }
+  .node.selected rect, .node.selected polygon, .node.selected ellipse { stroke: var(--accent); stroke-width: 3.5; }
+  .dim { opacity: .13; }
+  .edge { fill: none; stroke: var(--line); stroke-width: 1.5; }
+  .edge.relationship { stroke: var(--dataset-stroke); stroke-width: 2.5; }
+  .edge.uses_dataset, .edge.uses_field, .edge.scoped_to { stroke: var(--metric-stroke); stroke-dasharray: 5 4; }
+  .edge.synonym_of { stroke: var(--synonym-stroke); stroke-dasharray: 2 3; }
+  .edge.has_field { stroke: var(--field-stroke); }
+  .elabel { font-size: 11px; fill: var(--muted); text-anchor: middle; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; pointer-events: none; }
+  marker path { fill: var(--line); }
+  @media (max-width: 700px) { main { flex-direction: column; } aside { width: 100%; max-width: none; max-height: 38%; border-left: 0; border-top: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+<header>
+  <div><h1 id="title"></h1><div class="sub" id="subtitle"></div></div>
+  <div class="controls">
+    <input id="search" type="search" placeholder="Find a name…" aria-label="Find a node by name">
+    <label><input type="checkbox" id="showFields"> Fields</label>
+    <label><input type="checkbox" id="showSyn" checked> Synonyms</label>
+    <button id="reset" type="button">Reset view</button>
+  </div>
+</header>
+<main>
+  <div id="stage">
+    <svg id="svg" role="img" aria-label="Graph of the semantic model: datasets, relationships, metrics and synonyms">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z"/></marker>
+      </defs>
+      <g id="world"><g id="edges"></g><g id="labels"></g><g id="nodes"></g></g>
+    </svg>
+    <div class="legend" aria-hidden="true">
+      <span><i style="background:var(--dataset-fill);border-color:var(--dataset-stroke)"></i>Dataset (a table)</span>
+      <span><i style="background:var(--metric-fill);border-color:var(--metric-stroke)"></i>Metric (a business number)</span>
+      <span><i style="background:var(--field-fill);border-color:var(--field-stroke)"></i>Field (a column or computed value)</span>
+      <span><i style="background:var(--synonym-fill);border-color:var(--synonym-stroke)"></i>Synonym (another name)</span>
+    </div>
+    <div class="hint">Drag to move · scroll to zoom · click a node for details</div>
+  </div>
+  <aside id="side" aria-live="polite"><h2>Details</h2><div class="kind">click a node</div><p>Click any node to see what it means. Arrows between datasets read "many to one": many orders belong to one customer.</p></aside>
+</main>
+<script id="graph-data" type="application/json">{"model": "coffee_shop", "description": "Online orders for a small coffee shop, January to March 2026", "spec_version": "0.2.0.dev0", "nodes": [{"id": "dataset:orders", "kind": "dataset", "label": "orders", "details": {"description": "One row per customer order", "source": "shop.public.orders", "primary_key": ["order_id"], "fields": 6}}, {"id": "field:orders.order_id", "kind": "field", "label": "order_id", "details": {"dataset": "orders", "description": "Order number", "datatype": "Integer", "is_time": false, "expression": "order_id"}}, {"id": "field:orders.customer_id", "kind": "field", "label": "customer_id", "details": {"dataset": "orders", "description": "Who placed the order", "datatype": "Integer", "is_time": false, "expression": "customer_id"}}, {"id": "field:orders.product", "kind": "field", "label": "product", "details": {"dataset": "orders", "description": "What was bought", "datatype": "String", "is_time": false, "expression": "product"}}, {"id": "synonym:field:orders.product:item", "kind": "synonym", "label": "item", "details": {"names": "field:orders.product"}}, {"id": "synonym:field:orders.product:what they bought", "kind": "synonym", "label": "what they bought", "details": {"names": "field:orders.product"}}, {"id": "field:orders.order_date", "kind": "field", "label": "order_date", "details": {"dataset": "orders", "description": "Day the order was placed", "datatype": "Date", "is_time": true, "expression": "order_date"}}, {"id": "field:orders.order_month", "kind": "field", "label": "order_month", "details": {"dataset": "orders", "description": "Month of the order, like 2026-02", "datatype": "String", "is_time": true, "expression": "strftime(order_date, '%Y-%m')"}}, {"id": "field:orders.line_total", "kind": "field", "label": "line_total", "details": {"dataset": "orders", "description": "Money for this order, before tax (quantity times unit price)", "datatype": "Decimal", "is_time": false, "expression": "quantity * unit_price"}}, {"id": "dataset:customers", "kind": "dataset", "label": "customers", "details": {"description": "People who have bought from the shop", "source": "shop.public.customers", "primary_key": ["customer_id"], "fields": 3}}, {"id": "field:customers.customer_id", "kind": "field", "label": "customer_id", "details": {"dataset": "customers", "description": "Customer number", "datatype": "Integer", "is_time": false, "expression": "customer_id"}}, {"id": "field:customers.customer_name", "kind": "field", "label": "customer_name", "details": {"dataset": "customers", "description": "Customer's full name", "datatype": "String", "is_time": false, "expression": "name"}}, {"id": "field:customers.country", "kind": "field", "label": "country", "details": {"dataset": "customers", "description": "Where the customer lives", "datatype": "String", "is_time": false, "expression": "country"}}, {"id": "synonym:field:customers.country:market", "kind": "synonym", "label": "market", "details": {"names": "field:customers.country"}}, {"id": "synonym:field:customers.country:region", "kind": "synonym", "label": "region", "details": {"names": "field:customers.country"}}, {"id": "synonym:field:customers.country:location", "kind": "synonym", "label": "location", "details": {"names": "field:customers.country"}}, {"id": "metric:revenue", "kind": "metric", "label": "revenue", "details": {"description": "Total money earned from orders, before tax", "datatype": "Decimal", "expression": "SUM(orders.line_total)", "scope": "whole model"}}, {"id": "synonym:metric:revenue:sales", "kind": "synonym", "label": "sales", "details": {"names": "metric:revenue"}}, {"id": "synonym:metric:revenue:income", "kind": "synonym", "label": "income", "details": {"names": "metric:revenue"}}, {"id": "synonym:metric:revenue:turnover", "kind": "synonym", "label": "turnover", "details": {"names": "metric:revenue"}}, {"id": "metric:average_order_value", "kind": "metric", "label": "average_order_value", "details": {"description": "Revenue divided by the number of orders", "datatype": "Decimal", "expression": "SUM(orders.line_total) / COUNT(DISTINCT orders.order_id)", "scope": "whole model"}}, {"id": "synonym:metric:average_order_value:AOV", "kind": "synonym", "label": "AOV", "details": {"names": "metric:average_order_value"}}, {"id": "synonym:metric:average_order_value:basket size", "kind": "synonym", "label": "basket size", "details": {"names": "metric:average_order_value"}}, {"id": "synonym:metric:average_order_value:average basket", "kind": "synonym", "label": "average basket", "details": {"names": "metric:average_order_value"}}, {"id": "metric:active_customers", "kind": "metric", "label": "active_customers", "details": {"description": "Number of different customers who placed at least one order", "datatype": "Integer", "expression": "COUNT(DISTINCT customers.customer_id)", "scope": "whole model"}}, {"id": "metric:orders.order_count", "kind": "metric", "label": "orders.order_count", "details": {"description": "Number of orders", "datatype": "Integer", "expression": "COUNT(order_id)", "scope": "dataset orders"}}], "edges": [{"source": "dataset:orders", "target": "field:orders.order_id", "kind": "has_field", "label": ""}, {"source": "dataset:orders", "target": "field:orders.customer_id", "kind": "has_field", "label": ""}, {"source": "dataset:orders", "target": "field:orders.product", "kind": "has_field", "label": ""}, {"source": "synonym:field:orders.product:item", "target": "field:orders.product", "kind": "synonym_of", "label": ""}, {"source": "synonym:field:orders.product:what they bought", "target": "field:orders.product", "kind": "synonym_of", "label": ""}, {"source": "dataset:orders", "target": "field:orders.order_date", "kind": "has_field", "label": ""}, {"source": "dataset:orders", "target": "field:orders.order_month", "kind": "has_field", "label": ""}, {"source": "dataset:orders", "target": "field:orders.line_total", "kind": "has_field", "label": ""}, {"source": "dataset:customers", "target": "field:customers.customer_id", "kind": "has_field", "label": ""}, {"source": "dataset:customers", "target": "field:customers.customer_name", "kind": "has_field", "label": ""}, {"source": "dataset:customers", "target": "field:customers.country", "kind": "has_field", "label": ""}, {"source": "synonym:field:customers.country:market", "target": "field:customers.country", "kind": "synonym_of", "label": ""}, {"source": "synonym:field:customers.country:region", "target": "field:customers.country", "kind": "synonym_of", "label": ""}, {"source": "synonym:field:customers.country:location", "target": "field:customers.country", "kind": "synonym_of", "label": ""}, {"source": "dataset:orders", "target": "dataset:customers", "kind": "relationship", "label": "customer_id = customer_id"}, {"source": "synonym:metric:revenue:sales", "target": "metric:revenue", "kind": "synonym_of", "label": ""}, {"source": "synonym:metric:revenue:income", "target": "metric:revenue", "kind": "synonym_of", "label": ""}, {"source": "synonym:metric:revenue:turnover", "target": "metric:revenue", "kind": "synonym_of", "label": ""}, {"source": "metric:revenue", "target": "dataset:orders", "kind": "uses_dataset", "label": ""}, {"source": "metric:revenue", "target": "field:orders.line_total", "kind": "uses_field", "label": ""}, {"source": "synonym:metric:average_order_value:AOV", "target": "metric:average_order_value", "kind": "synonym_of", "label": ""}, {"source": "synonym:metric:average_order_value:basket size", "target": "metric:average_order_value", "kind": "synonym_of", "label": ""}, {"source": "synonym:metric:average_order_value:average basket", "target": "metric:average_order_value", "kind": "synonym_of", "label": ""}, {"source": "metric:average_order_value", "target": "dataset:orders", "kind": "uses_dataset", "label": ""}, {"source": "metric:average_order_value", "target": "field:orders.line_total", "kind": "uses_field", "label": ""}, {"source": "metric:average_order_value", "target": "field:orders.order_id", "kind": "uses_field", "label": ""}, {"source": "metric:active_customers", "target": "dataset:customers", "kind": "uses_dataset", "label": ""}, {"source": "metric:active_customers", "target": "field:customers.customer_id", "kind": "uses_field", "label": ""}, {"source": "metric:orders.order_count", "target": "dataset:orders", "kind": "scoped_to", "label": ""}, {"source": "metric:orders.order_count", "target": "field:orders.order_id", "kind": "uses_field", "label": ""}]}</script>
+<script>
+(function () {
+  "use strict";
+  var data = JSON.parse(document.getElementById("graph-data").textContent);
+  var NS = "http://www.w3.org/2000/svg";
+  var svg = document.getElementById("svg"), world = document.getElementById("world");
+  var gEdges = document.getElementById("edges"), gLabels = document.getElementById("labels"), gNodes = document.getElementById("nodes");
+  document.getElementById("title").textContent = data.model + " · ontology graph";
+  document.getElementById("subtitle").textContent = (data.description || "") + (data.description ? " · " : "") + "Apache Ossie spec " + data.spec_version;
+  document.title = document.getElementById("title").textContent;
+
+  function el(name, attrs, parent) { var e = document.createElementNS(NS, name); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+
+  var nodes = data.nodes.map(function (n, i) {
+    var w = Math.max(54, n.label.length * 7.2 + 24);
+    if (n.kind === "metric") w += 22;
+    var h = n.kind === "dataset" ? 40 : 30;
+    var a = (i / Math.max(1, data.nodes.length)) * Math.PI * 2;
+    return { id: n.id, kind: n.kind, label: n.label, details: n.details || {}, w: w, h: h, x: 400 * Math.cos(a), y: 300 * Math.sin(a), vx: 0, vy: 0, fixed: false, vis: true };
+  });
+  var byId = {}; nodes.forEach(function (n) { byId[n.id] = n; });
+  var edges = data.edges.map(function (e) { return { s: byId[e.source], t: byId[e.target], kind: e.kind, label: e.label || "", vis: true }; })
+    .filter(function (e) { return e.s && e.t; });
+
+  var showFields = document.getElementById("showFields"), showSyn = document.getElementById("showSyn");
+  function applyVisibility() {
+    nodes.forEach(function (n) { n.vis = !((n.kind === "field" && !showFields.checked) || (n.kind === "synonym" && !showSyn.checked)); });
+    edges.forEach(function (e) {
+      var kindOk = showFields.checked ? e.kind !== "uses_dataset" : (e.kind !== "has_field" && e.kind !== "uses_field");
+      e.vis = kindOk && e.s.vis && e.t.vis;
+    });
+    nodes.forEach(function (n) { if (n.kind === "synonym" && n.vis && !edges.some(function (e) { return e.vis && e.s === n; })) n.vis = false; });
+    draw(); alpha = 1; tick();
+  }
+
+  // ----- drawing
+  var nodeEls = new Map(), edgeEls = new Map(), labelEls = new Map();
+  var selected = null, query = "";
+  function nodeShape(n, g) {
+    if (n.kind === "metric") {
+      var hw = n.w / 2, hh = n.h / 2, pts = [[-hw, 0], [-hw + 12, -hh], [hw - 12, -hh], [hw, 0], [hw - 12, hh], [-hw + 12, hh]].map(function (p) { return p.join(","); }).join(" ");
+      el("polygon", { points: pts }, g);
+    } else if (n.kind === "synonym") {
+      el("ellipse", { rx: n.w / 2, ry: n.h / 2 }, g);
+    } else {
+      el("rect", { x: -n.w / 2, y: -n.h / 2, width: n.w, height: n.h, rx: n.kind === "dataset" ? 10 : 6 }, g);
+    }
+    var t = el("text", {}, g); t.textContent = n.label;
+  }
+  function draw() {
+    gEdges.textContent = ""; gLabels.textContent = ""; gNodes.textContent = "";
+    nodeEls.clear(); edgeEls.clear(); labelEls.clear();
+    edges.forEach(function (e) {
+      if (!e.vis) return;
+      var p = el("path", { "class": "edge " + e.kind }, gEdges);
+      if (e.kind === "relationship" || e.kind === "uses_dataset" || e.kind === "uses_field" || e.kind === "scoped_to") p.setAttribute("marker-end", "url(#arrow)");
+      edgeEls.set(e, p);
+      var text = e.kind === "relationship" ? "many to one: " + e.label : e.kind === "synonym_of" ? "" : e.kind === "scoped_to" ? "belongs to" : e.kind === "uses_dataset" || e.kind === "uses_field" ? "uses" : "";
+      if (text) { var l = el("text", { "class": "elabel" }, gLabels); l.textContent = text; labelEls.set(e, l); }
+    });
+    nodes.forEach(function (n) {
+      if (!n.vis) return;
+      var g = el("g", { "class": "node " + n.kind, tabindex: 0, role: "button", "aria-label": n.kind + " " + n.label }, gNodes);
+      nodeShape(n, g); nodeEls.set(n, g); attach(n, g);
+    });
+    place(); highlight();
+  }
+  function edgeAnchor(a, b) {  // point on a's box edge towards b
+    var dx = b.x - a.x, dy = b.y - a.y; if (!dx && !dy) return { x: a.x, y: a.y };
+    var sx = (a.w / 2 + 3) / Math.abs(dx || 1e-9), sy = (a.h / 2 + 3) / Math.abs(dy || 1e-9), k = Math.min(sx, sy);
+    return { x: a.x + dx * k, y: a.y + dy * k };
+  }
+  function place() {
+    nodeEls.forEach(function (g, n) { g.setAttribute("transform", "translate(" + n.x.toFixed(1) + "," + n.y.toFixed(1) + ")"); });
+    edgeEls.forEach(function (p, e) {
+      var a = edgeAnchor(e.s, e.t), b = edgeAnchor(e.t, e.s);
+      p.setAttribute("d", "M" + a.x.toFixed(1) + "," + a.y.toFixed(1) + " L" + b.x.toFixed(1) + "," + b.y.toFixed(1));
+      var l = labelEls.get(e); if (l) { l.setAttribute("x", ((a.x + b.x) / 2).toFixed(1)); l.setAttribute("y", ((a.y + b.y) / 2 - 4).toFixed(1)); }
+    });
+  }
+  function neighbours(n) { var s = new Set([n]); edges.forEach(function (e) { if (e.vis && (e.s === n || e.t === n)) { s.add(e.s); s.add(e.t); } }); return s; }
+  function highlight() {
+    var q = query.trim().toLowerCase(), hits = null;
+    var focus = !q && selected && selected.vis ? neighbours(selected) : null;  // a search overrides the selection
+    if (q) { hits = new Set(); nodes.forEach(function (n) { if (n.vis && n.label.toLowerCase().indexOf(q) >= 0) hits.add(n); }); }
+    nodeEls.forEach(function (g, n) {
+      var on = (!focus || focus.has(n)) && (!hits || hits.has(n));
+      g.classList.toggle("dim", !on); g.classList.toggle("selected", n === selected);
+    });
+    edgeEls.forEach(function (p, e) {
+      var on = (!focus || (focus.has(e.s) && focus.has(e.t))) && (!hits || hits.has(e.s) || hits.has(e.t));
+      p.classList.toggle("dim", !on); var l = labelEls.get(e); if (l) l.classList.toggle("dim", !on);
+    });
+  }
+
+  // ----- force layout (small and dependency-free)
+  var alpha = 1, raf = 0;
+  function step() {
+    var vis = nodes.filter(function (n) { return n.vis; });
+    var i, j, a, b, dx, dy, d2, d, f;
+    for (i = 0; i < vis.length; i++) for (j = i + 1; j < vis.length; j++) {
+      a = vis[i]; b = vis[j]; dx = b.x - a.x; dy = b.y - a.y; d2 = dx * dx + dy * dy + 0.01; d = Math.sqrt(d2);
+      f = 26000 / d2 * alpha; a.vx -= dx / d * f; a.vy -= dy / d * f; b.vx += dx / d * f; b.vy += dy / d * f;
+      var minX = (a.w + b.w) / 2 + 14, minY = (a.h + b.h) / 2 + 10;  // keep boxes apart
+      if (Math.abs(dx) < minX && Math.abs(dy) < minY) { var push = 1.5 * alpha; if (Math.abs(dx) / minX > Math.abs(dy) / minY) { a.vx -= Math.sign(dx || 1) * push; b.vx += Math.sign(dx || 1) * push; } else { a.vy -= Math.sign(dy || 1) * push; b.vy += Math.sign(dy || 1) * push; } }
+    }
+    edges.forEach(function (e) {
+      if (!e.vis) return;
+      var want = e.kind === "relationship" ? 230 : e.kind === "synonym_of" ? 95 : e.kind === "has_field" ? 120 : 150;
+      var s = e.s, t = e.t; dx = t.x - s.x; dy = t.y - s.y; d = Math.sqrt(dx * dx + dy * dy) || 1;
+      f = (d - want) * 0.02 * alpha; s.vx += dx / d * f; s.vy += dy / d * f; t.vx -= dx / d * f; t.vy -= dy / d * f;
+    });
+    vis.forEach(function (n) {
+      n.vx -= n.x * 0.004 * alpha; n.vy -= n.y * 0.004 * alpha;
+      if (!n.fixed) { n.x += n.vx; n.y += n.vy; }
+      n.vx *= 0.6; n.vy *= 0.6;
+    });
+    alpha *= 0.985;
+  }
+  function tick() {
+    cancelAnimationFrame(raf);
+    (function loop() { for (var k = 0; k < 3; k++) step(); place(); if (alpha > 0.02) raf = requestAnimationFrame(loop); else fit(); })();
+  }
+
+  // ----- pan / zoom
+  var view = { x: 0, y: 0, k: 1 };
+  function applyView() { world.setAttribute("transform", "translate(" + view.x + "," + view.y + ") scale(" + view.k + ")"); }
+  function fit() {
+    var vis = nodes.filter(function (n) { return n.vis; }); if (!vis.length) return;
+    var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    vis.forEach(function (n) { x0 = Math.min(x0, n.x - n.w / 2); x1 = Math.max(x1, n.x + n.w / 2); y0 = Math.min(y0, n.y - n.h / 2); y1 = Math.max(y1, n.y + n.h / 2); });
+    var W = svg.clientWidth || 800, H = svg.clientHeight || 600, pad = 50;
+    view.k = Math.max(0.2, Math.min(1.6, Math.min((W - pad * 2) / (x1 - x0 || 1), (H - pad * 2) / (y1 - y0 || 1))));
+    view.x = W / 2 - ((x0 + x1) / 2) * view.k; view.y = H / 2 - ((y0 + y1) / 2) * view.k; applyView();
+  }
+  function toWorld(ev) { var r = svg.getBoundingClientRect(); return { x: (ev.clientX - r.left - view.x) / view.k, y: (ev.clientY - r.top - view.y) / view.k }; }
+  svg.addEventListener("wheel", function (ev) {
+    ev.preventDefault(); var r = svg.getBoundingClientRect(), mx = ev.clientX - r.left, my = ev.clientY - r.top;
+    var k2 = Math.max(0.15, Math.min(3, view.k * (ev.deltaY < 0 ? 1.12 : 1 / 1.12)));
+    view.x = mx - (mx - view.x) * (k2 / view.k); view.y = my - (my - view.y) * (k2 / view.k); view.k = k2; applyView();
+  }, { passive: false });
+  var pan = null;
+  svg.addEventListener("pointerdown", function (ev) {
+    if (ev.target.closest(".node")) return;
+    pan = { x: ev.clientX - view.x, y: ev.clientY - view.y }; svg.classList.add("panning"); svg.setPointerCapture(ev.pointerId);
+    selected = null; highlight(); showDetails(null);
+  });
+  svg.addEventListener("pointermove", function (ev) { if (pan) { view.x = ev.clientX - pan.x; view.y = ev.clientY - pan.y; applyView(); } });
+  function endPan() { pan = null; svg.classList.remove("panning"); }
+  svg.addEventListener("pointerup", endPan); svg.addEventListener("pointercancel", endPan);
+
+  // ----- dragging nodes, selecting
+  function attach(n, g) {
+    var drag = null, moved = false;
+    g.addEventListener("pointerdown", function (ev) {
+      ev.stopPropagation(); var p = toWorld(ev); drag = { dx: n.x - p.x, dy: n.y - p.y }; moved = false; n.fixed = true; g.setPointerCapture(ev.pointerId);
+    });
+    g.addEventListener("pointermove", function (ev) {
+      if (!drag) return; var p = toWorld(ev); n.x = p.x + drag.dx; n.y = p.y + drag.dy; moved = true; place();
+      if (alpha < 0.3) { alpha = 0.3; tick(); }
+    });
+    g.addEventListener("pointerup", function () { if (!drag) return; drag = null; n.fixed = false; if (!moved) select(n); });
+    g.addEventListener("keydown", function (ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select(n); } });
+  }
+  function select(n) { selected = n; highlight(); showDetails(n); }
+
+  // ----- details panel (everything goes in with textContent)
+  var side = document.getElementById("side");
+  var KIND = { dataset: "Dataset", field: "Field", metric: "Metric", synonym: "Synonym" };
+  function row(dl, term, value, code) {
+    if (value === "" || value === undefined || value === null || (Array.isArray(value) && !value.length)) return;
+    var dt = document.createElement("dt"); dt.textContent = term; var dd = document.createElement("dd");
+    var text = Array.isArray(value) ? value.join(", ") : String(value);
+    if (code) { var c = document.createElement("code"); c.textContent = text; dd.appendChild(c); } else dd.textContent = text;
+    dl.appendChild(dt); dl.appendChild(dd);
+  }
+  function relatedNames(n, filter) {
+    var out = []; edges.forEach(function (e) { var o = filter(e, n); if (o && out.indexOf(o.label) < 0) out.push(o.label); }); return out;
+  }
+  function showDetails(n) {
+    side.textContent = "";
+    var h = document.createElement("h2"), k = document.createElement("div"); k.className = "kind";
+    if (!n) { h.textContent = "Details"; k.textContent = "click a node"; side.appendChild(h); side.appendChild(k); return; }
+    h.textContent = n.label; k.textContent = KIND[n.kind]; side.appendChild(h); side.appendChild(k);
+    var d = n.details, dl = document.createElement("dl");
+    if (n.kind === "dataset") {
+      row(dl, "What it is", d.description); row(dl, "Table", d.source, true); row(dl, "Key", d.primary_key); row(dl, "Fields", d.fields);
+      row(dl, "Joins to (many to one)", relatedNames(n, function (e, x) { return e.kind === "relationship" && e.s === x ? e.t : null; }));
+      row(dl, "Joined from", relatedNames(n, function (e, x) { return e.kind === "relationship" && e.t === x ? e.s : null; }));
+      row(dl, "Metrics using it", relatedNames(n, function (e, x) { return (e.kind === "uses_dataset" || e.kind === "scoped_to") && e.t === x ? e.s : null; }));
+    } else if (n.kind === "metric") {
+      row(dl, "What it means", d.description); row(dl, "Formula", d.expression, true); row(dl, "Type", d.datatype); row(dl, "Defined for", d.scope);
+      row(dl, "Reads fields", relatedNames(n, function (e, x) { return e.kind === "uses_field" && e.s === x ? e.t : null; }));
+    } else if (n.kind === "field") {
+      row(dl, "What it is", d.description); row(dl, "Dataset", d.dataset); row(dl, "Type", d.datatype); row(dl, "Time field", d.is_time ? "yes" : ""); row(dl, "Expression", d.expression, true);
+      row(dl, "Used by metrics", relatedNames(n, function (e, x) { return e.kind === "uses_field" && e.t === x ? e.s : null; }));
+    } else {
+      row(dl, "Another name for", byId[d.names] ? byId[d.names].label : d.names);
+    }
+    row(dl, "Also called", relatedNames(n, function (e, x) { return e.kind === "synonym_of" && e.t === x ? e.s : null; }));
+    side.appendChild(dl);
+  }
+
+  document.getElementById("search").addEventListener("input", function (ev) { query = ev.target.value; highlight(); });
+  document.getElementById("reset").addEventListener("click", function () { selected = null; query = ""; document.getElementById("search").value = ""; highlight(); showDetails(null); alpha = 1; tick(); });
+  showFields.addEventListener("change", applyVisibility); showSyn.addEventListener("change", applyVisibility);
+  window.addEventListener("resize", fit);
+  showSyn.checked = data.nodes.length <= 40;  // big models start uncluttered; tick "Synonyms" to add them
+  applyVisibility();
+})();
+</script>
+</body>
+</html>

@@ -11,6 +11,7 @@ ossie-duck reads one file that says what your business terms mean ("revenue", "a
 - [What is this? (plain English)](#what-is-this-plain-english)
 - [Quickstart: 5 minutes, nothing else to install](#quickstart-5-minutes-nothing-else-to-install)
 - [Hands-on: a coffee shop](#hands-on-a-coffee-shop)
+- [See your model as a graph](#see-your-model-as-a-graph) (Mermaid diagram or interactive page)
 - [Three ways to use it](#three-ways-to-use-it): [command line](#1-the-command-line), [REST API](#2-rest-api-for-dashboards-and-apps), [AI assistants](#3-ai-assistants-mcp), [Python](#4-from-python)
 - [How it works (for the technically curious)](#how-it-works-for-the-technically-curious)
 - [Writing your own model](#writing-your-own-model)
@@ -266,6 +267,166 @@ Every number dropped by exactly the mug sales, and that one edit is the only cha
 
 ---
 
+## See your model as a graph
+
+An Ossie model is really a **map of your business**: the tables, how they connect, the numbers built from them, and the other names people use for things. `ossie-duck graph` draws that map. Use it to check a model at a glance, to explain it to a colleague, or to put an up-to-date picture in your documentation.
+
+| On the picture | In the Ossie model | The question it answers |
+|---|---|---|
+| Green **can** (cylinder) | a **dataset** with its key | "What tables are there?" |
+| Thick arrow, "many to one" | a **relationship** | "How do they connect?" |
+| Yellow **hexagon** | a **metric** | "What business numbers are defined?" |
+| Dashed arrow "uses" | the fields a metric's formula reads | "What is this number built from?" |
+| Purple **pill** | an `ai_context` **synonym** | "What other names does it answer to?" |
+| Grey **box** (with `--fields`) | a **field** | "What columns and computed values exist?" |
+
+### Option 1: a diagram for documents (Mermaid)
+
+```bash
+cd examples/coffee_shop
+ossie-duck graph coffee_shop_model.yaml                  # prints Mermaid text
+ossie-duck graph coffee_shop_model.yaml -o graph.md      # a file with the diagram, ready to paste
+```
+
+[Mermaid](https://mermaid.js.org) is a text format that GitHub, GitLab, Notion, Obsidian and many other tools draw as a picture. This is the real output for the coffee-shop model, drawn by GitHub:
+
+```mermaid
+flowchart LR
+  n0[("orders  (key: order_id)")]
+  n1[("customers  (key: customer_id)")]
+  n2{{"revenue"}}
+  n3(["sales"])
+  n4(["income"])
+  n5(["turnover"])
+  n6{{"average_order_value"}}
+  n7(["AOV"])
+  n8(["basket size"])
+  n9(["average basket"])
+  n10{{"active_customers"}}
+  n11{{"orders.order_count"}}
+  n0 -->|"many to one: customer_id = customer_id"| n1
+  n3 ---|also called| n2
+  n4 ---|also called| n2
+  n5 ---|also called| n2
+  n2 -.->|uses| n0
+  n7 ---|also called| n6
+  n8 ---|also called| n6
+  n9 ---|also called| n6
+  n6 -.->|uses| n0
+  n10 -.->|uses| n1
+  n11 -.->|belongs to| n0
+  classDef dataset fill:#e6f6ec,stroke:#2f855a,color:#12361f
+  classDef metric fill:#fff3d6,stroke:#b7791f,color:#3b2a06
+  classDef field fill:#eef2f7,stroke:#64748b,color:#1e293b
+  classDef synonym fill:#f3e8ff,stroke:#805ad5,color:#3b1f66
+  class n0,n1 dataset
+  class n2,n6,n10,n11 metric
+  class n3,n4,n5,n7,n8,n9 synonym
+```
+
+Add `--fields` to also show every field, grouped inside its dataset, and which fields each metric reads:
+
+```mermaid
+flowchart LR
+  subgraph n0["orders  (key: order_id)"]
+    n1("order_id")
+    n2("customer_id")
+    n3("product")
+    n6("order_date (time)")
+    n7("order_month (time)")
+    n8("line_total")
+  end
+  n4(["item"])
+  n5(["what they bought"])
+  subgraph n9["customers  (key: customer_id)"]
+    n10("customer_id")
+    n11("customer_name")
+    n12("country")
+  end
+  n13(["market"])
+  n14(["region"])
+  n15(["location"])
+  n16{{"revenue"}}
+  n17(["sales"])
+  n18(["income"])
+  n19(["turnover"])
+  n20{{"average_order_value"}}
+  n21(["AOV"])
+  n22(["basket size"])
+  n23(["average basket"])
+  n24{{"active_customers"}}
+  n25{{"orders.order_count"}}
+  n4 ---|also called| n3
+  n5 ---|also called| n3
+  n13 ---|also called| n12
+  n14 ---|also called| n12
+  n15 ---|also called| n12
+  n0 -->|"many to one: customer_id = customer_id"| n9
+  n17 ---|also called| n16
+  n18 ---|also called| n16
+  n19 ---|also called| n16
+  n16 -.->|uses| n8
+  n21 ---|also called| n20
+  n22 ---|also called| n20
+  n23 ---|also called| n20
+  n20 -.->|uses| n8
+  n20 -.->|uses| n1
+  n24 -.->|uses| n10
+  n25 -.->|belongs to| n0
+  n25 -.->|uses| n1
+  classDef dataset fill:#e6f6ec,stroke:#2f855a,color:#12361f
+  classDef metric fill:#fff3d6,stroke:#b7791f,color:#3b2a06
+  classDef field fill:#eef2f7,stroke:#64748b,color:#1e293b
+  classDef synonym fill:#f3e8ff,stroke:#805ad5,color:#3b1f66
+  class n16,n20,n24,n25 metric
+  class n1,n2,n3,n6,n7,n8,n10,n11,n12 field
+  class n4,n5,n13,n14,n15,n17,n18,n19,n21,n22,n23 synonym
+  style n0 fill:#f2faf5,stroke:#2f855a,color:#12361f
+  style n9 fill:#f2faf5,stroke:#2f855a,color:#12361f
+```
+
+### Option 2: an interactive page (HTML)
+
+```bash
+ossie-duck graph coffee_shop_model.yaml -o graph.html
+```
+
+Then **double-click `graph.html`** to open it in your browser. It is one self-contained file: it works offline, and you can email it or attach it to a ticket.
+
+![The interactive graph, with the orders dataset selected](docs/graph-interactive-coffee-shop.png)
+
+*Clicking a node dims everything that is not connected to it and explains it in the panel on the right: what it means, its table and key, what it joins to, and which metrics use it.*
+
+- **Drag** a node to move it, **scroll** to zoom, drag the background to pan.
+- **Click** a node for its description, formula, type and connections.
+- **Search** ("Find a name") highlights matches, including synonyms, so you can see what a word like "turnover" maps to.
+- **Tick "Fields"** to see every column and which metric reads it:
+
+![The same graph with fields shown](docs/graph-interactive-fields.png)
+
+- It follows your light or dark theme and works on a phone screen.
+
+Try it without running anything: download [`docs/coffee_shop_graph.html`](docs/coffee_shop_graph.html) (on GitHub use the "Download raw file" button, then open it from your downloads), or its larger sibling [`docs/tpcds_graph.html`](docs/tpcds_graph.html).
+
+### Bigger models, other formats
+
+The bundled TPC-DS model has 5 datasets and 9 metrics, each with several synonyms. For a model that size the page starts with synonyms switched off to stay readable; tick **Synonyms** to add them. For Mermaid, add `--no-synonyms` to get the same result.
+
+![The TPC-DS model in the interactive page](docs/graph-interactive-tpcds.png)
+
+| Command | You get | Best for |
+|---|---|---|
+| `ossie-duck graph MODEL` | Mermaid text on screen | quick look, piping to other tools |
+| `... -o graph.md` | a Markdown file with a ```` ```mermaid ```` block | README files, wikis, pull requests |
+| `... -o graph.mmd` or `--format mermaid` | plain Mermaid text | Mermaid editors and renderers |
+| `... -o graph.html` | the interactive page | exploring, presenting, sharing by email |
+| `... -o graph.json` | nodes and edges as JSON | feeding other tools, or drawing it your own way |
+| `--fields` / `--no-synonyms` | more or less detail (Mermaid) | small models / big models |
+
+How it is built, for the curious: the graph is read straight from the model file, with no database needed. A metric's "uses" arrows come from the field names found in its formula (so `SUM(orders.line_total)` points at `orders.line_total`). Mermaid drawings of very large models get hard to read, so for those use the HTML page. The page includes your table names and formulas, so treat it like the model file itself when sharing.
+
+---
+
 ## Three ways to use it
 
 All of them read the same model file and give the same answers. Pick the one that fits who is asking.
@@ -287,6 +448,7 @@ You have already used it. The commands:
 | `ossie-duck validate MODEL` | check a model file for mistakes |
 | `ossie-duck query MODEL -m ... -d ... -f ...` | run a question and print the answer (add `--format csv` or `json`, and `--show-sql` to see the SQL) |
 | `ossie-duck sql MODEL -m ... -d ...` | show the SQL without running it |
+| `ossie-duck graph MODEL [-o FILE]` | draw the model as a graph: Mermaid, an interactive HTML page, or JSON ([details](#see-your-model-as-a-graph)) |
 
 ### 2. REST API for dashboards and apps
 
@@ -700,7 +862,7 @@ Install extras: `".[serve]"` (REST), `".[mcp]"` (MCP, needs the `mcp` 2.x SDK), 
 ## Limitations and honest caveats
 
 - **One fact table per question.** Questions that combine several fact tables, and ambiguous join paths (two relationships between the same datasets), give a clear error rather than a guess.
-- **Learning-sized.** It has 180 automated tests that compare results with hand-written SQL, and the servers were checked as real processes, but it is not load-tested. For production, look at the official Apache Ossie tooling and DuckDB's community `ossie` extension (`INSTALL ossie FROM community`).
+- **Learning-sized.** It has 214 automated tests that compare results with hand-written SQL, and the servers were checked as real processes, but it is not load-tested. For production, look at the official Apache Ossie tooling and DuckDB's community `ossie` extension (`INSTALL ossie FROM community`).
 - **Draft spec.** It implements `0.2.0.dev0` only and rejects other versions with a clear message.
 - **Dialects.** Expressions in `OSSIE_SQL_2026`, `ANSI_SQL` and `DUCKDB` run as-is on DuckDB. A field or metric that only has another dialect (such as `SNOWFLAKE`) is reported and skipped, and only fails if a question uses it.
 - **Not supported by the spec version yet:** fields that refer to other fields, metrics that refer to other metrics, datasets built from other datasets. `custom_extensions` are carried but not interpreted.
@@ -728,12 +890,14 @@ ossie-duck/
     mcp_server.py  MCP server
     auth.py        API-key middleware
     ask.py         optional natural-language layer
+    graph.py       draw a model as Mermaid, interactive HTML or JSON
     cli.py         the ossie-duck command
     sample_data.py synthetic TPC-DS tables, TPC-DS extension loader
     schema/        ossie-schema.json (from apache/ossie, spec 0.2.0.dev0)
   examples/
     coffee_shop/   the walkthrough: CSVs, build_db.py, coffee_shop_model.yaml
     tpcds_semantic_model.yaml   official Apache Ossie example
+  docs/            sample graph pages (HTML) and the images used in this README and the blog
   tests/
 ```
 
